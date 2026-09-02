@@ -1,15 +1,17 @@
 export type SafetyPhaseStep = 
   | 'MONITOR'
   | 'DETECT'
-  | 'STABILIZE'
+  | 'ISOLATE'
+  | 'PROTECT'
   | 'SECURE'
   | 'RECOVERY';
 
 export type SystemStatus = 
   | 'SYSTEM NORMAL'
-  | 'SEISMIC EVENT DETECTED — STABILIZATION ACTIVE'
-  | 'CRITICAL SEISMIC EVENT — EMERGENCY PROTOCOL'
+  | 'SEISMIC ACTIVITY DETECTED'
+  | 'SEISMIC ISOLATION ACTIVE'
   | 'EQUIPMENT SECURED'
+  | 'UNPROTECTED — HIGH SEISMIC MOTION'
   | 'ROUTINE VIBRATION — NO SEISMIC EVENT'
   | 'RECOVERY SUMMARY';
 
@@ -23,13 +25,16 @@ export interface SensorReading {
   gravityVector: number;
   dynamicAcceleration: number; // g
   vibrationIntensity: number; // %
+  floorMotion: number; // %
+  podMotion: number; // %
+  isolationEfficiency: number; // %
 }
 
 export interface DamperState {
   id: string;
   name: string;
   engagement: number;
-  status: 'READY' | 'ENGAGING' | 'ACTIVE' | 'LOCKED';
+  status: 'READY' | 'ENGAGING' | 'ACTIVE' | 'LOCKED' | 'DISABLED';
   forceExtender: number;
 }
 
@@ -43,15 +48,19 @@ export interface EventLogEntry {
 
 export interface SafetyDecisionMetrics {
   riskScore: number; // 0 - 100
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'CONTROLLED';
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'CONTROLLED' | 'UNPROTECTED';
   seismicConfidence: number; // %
   peakDynamicAcceleration: number; // g
   detectionThreshold: number; // g (0.25)
   detectionLatency: number; // ms
   responseTime?: number; // seconds
   signalPattern: 'NORMAL' | 'ROUTINE_PUMP' | 'SEISMIC EVENT' | 'CRITICAL SEISMIC EVENT';
-  equipmentStatus: 'OPERATIONAL' | 'STABILIZING' | 'SECURED';
-  responseMode?: 'MONITORING' | 'FILTERING' | 'STABILIZE' | 'EMERGENCY PROTOCOL';
+  equipmentStatus: 'OPERATIONAL' | 'STABILIZING' | 'SECURED' | 'UNPROTECTED';
+  responseMode?: 'MONITORING' | 'FILTERING' | 'STABILIZE' | 'EMERGENCY PROTOCOL' | 'DISABLED';
+  floorMotion: number; // %
+  podMotion: number; // %
+  isolationEfficiency: number; // %
+  isIsolationEnabled: boolean;
 }
 
 export interface EmergencyAlert {

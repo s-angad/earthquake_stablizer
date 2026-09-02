@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafetyPhaseStep } from '../types/esds';
-import { Activity, ShieldAlert, Lock, Eye } from 'lucide-react';
+import { Eye, Activity, ShieldAlert, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
 
 interface StateMachineProps {
   currentPhase: SafetyPhaseStep;
@@ -11,73 +11,59 @@ interface StepItem {
   id: SafetyPhaseStep;
   num: string;
   label: string;
+  sub: string;
   icon: React.ReactNode;
 }
 
 const STEPS: StepItem[] = [
-  { id: 'MONITOR', num: '01', label: 'MONITORING', icon: <Eye className="w-4 h-4" /> },
-  { id: 'DETECT', num: '02', label: 'EARTHQUAKE DETECTED', icon: <Activity className="w-4 h-4" /> },
-  { id: 'STABILIZE', num: '03', label: 'STABILIZATION ACTIVE', icon: <ShieldAlert className="w-4 h-4" /> },
-  { id: 'SECURE', num: '04', label: 'EQUIPMENT SECURED', icon: <Lock className="w-4 h-4" /> },
+  { id: 'MONITOR', num: '01', label: 'MONITOR', sub: 'Scanning environment', icon: <Eye className="w-4 h-4" /> },
+  { id: 'DETECT', num: '02', label: 'DETECT', sub: 'Seismic activity found', icon: <Activity className="w-4 h-4" /> },
+  { id: 'ISOLATE', num: '03', label: 'ISOLATE', sub: 'Isolation systems active', icon: <ShieldAlert className="w-4 h-4" /> },
+  { id: 'PROTECT', num: '04', label: 'PROTECT', sub: 'Patient & equipment safe', icon: <ShieldCheck className="w-4 h-4" /> },
+  { id: 'SECURE', num: '05', label: 'SECURE', sub: 'System in secured state', icon: <Lock className="w-4 h-4" /> },
 ];
 
 export const SafetyStateMachine: React.FC<StateMachineProps> = ({ currentPhase }) => {
   const activeIndex = STEPS.findIndex((s) => s.id === currentPhase);
 
   return (
-    <div className="panel-glass rounded-xl p-4 border border-console-border w-full shadow-lg">
-      <div className="flex items-center justify-between pb-2.5 border-b border-console-border mb-3">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-cyan-400" />
-          <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-200 tracking-wide uppercase">
-            SAFETY RESPONSE SEQUENCE
-          </h2>
-        </div>
-        <span className="text-[10px] font-mono text-slate-400">
-          STAGE: <strong className="text-cyan-300 font-bold">{currentPhase}</strong>
-        </span>
-      </div>
-
-      {/* 4-Step Horizontal Pipeline Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="panel-glass rounded-xl p-3 border border-console-border w-full shadow-lg">
+      {/* 5-Step Horizontal Pipeline Flow (Matching Image 2 Bottom Pipeline) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 font-mono text-xs">
         {STEPS.map((step, idx) => {
           const isActive = step.id === currentPhase;
           const isPassed = idx < activeIndex || currentPhase === 'RECOVERY';
 
           let stepStyle = 'bg-console-card/60 border-console-border text-slate-400';
-          let numStyle = 'text-slate-500 bg-slate-900';
-          let dotStyle = 'bg-slate-700';
+          let iconBg = 'bg-slate-900 text-slate-500 border-slate-700';
 
           if (isActive) {
             stepStyle =
-              step.id === 'STABILIZE' || step.id === 'SECURE'
+              step.id === 'ISOLATE' || step.id === 'PROTECT' || step.id === 'SECURE'
                 ? 'bg-emerald-950/90 border-emerald-400 text-emerald-200 glow-safe ring-1 ring-emerald-400'
                 : 'bg-amber-950/90 border-amber-400 text-amber-200 glow-warning ring-1 ring-amber-400';
-            numStyle = 'text-slate-950 font-bold bg-amber-400';
-            dotStyle = 'bg-amber-400 animate-ping';
+            iconBg = 'bg-amber-400 text-slate-950 font-bold border-amber-300';
           } else if (isPassed) {
-            stepStyle = 'bg-emerald-950/40 border-emerald-800/60 text-emerald-400';
-            numStyle = 'text-emerald-300 bg-emerald-950';
-            dotStyle = 'bg-emerald-500';
+            stepStyle = 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300';
+            iconBg = 'bg-emerald-950 text-emerald-300 border-emerald-700';
           }
 
           return (
-            <div
-              key={step.id}
-              className={`p-3 rounded-lg border font-mono text-xs flex flex-col justify-between transition-all duration-300 ${stepStyle}`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${numStyle}`}>
-                  {step.num}
-                </span>
-                <span className={`w-2.5 h-2.5 rounded-full ${dotStyle}`} />
+            <React.Fragment key={step.id}>
+              <div className={`flex-1 w-full p-2.5 rounded-lg border flex items-center gap-2.5 transition-all duration-300 ${stepStyle}`}>
+                <div className={`w-7 h-7 rounded-full border flex items-center justify-center font-bold flex-shrink-0 ${iconBg}`}>
+                  {step.icon}
+                </div>
+                <div className="truncate">
+                  <div className="font-bold text-xs uppercase tracking-wider">{step.label}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{step.sub}</div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 font-bold text-xs">
-                {step.icon}
-                <span className="truncate">{step.label}</span>
-              </div>
-            </div>
+              {idx < STEPS.length - 1 && (
+                <ArrowRight className="hidden sm:block w-4 h-4 text-slate-600 flex-shrink-0" />
+              )}
+            </React.Fragment>
           );
         })}
       </div>

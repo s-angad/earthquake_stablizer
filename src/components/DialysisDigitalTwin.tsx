@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 import { SafetyPhaseStep, DamperState, SensorReading } from '../types/esds';
-import { ShieldCheck, Activity, Zap, HeartPulse } from 'lucide-react';
+import { ShieldCheck, Activity, HeartPulse, AlertTriangle, Cpu, Zap } from 'lucide-react';
 
 interface DigitalTwinProps {
   phase: SafetyPhaseStep;
@@ -8,7 +9,557 @@ interface DigitalTwinProps {
   dampers: DamperState[];
   isSimulating: boolean;
   peakG: number;
+  isIsolationEnabled: boolean;
+  compareMode: boolean;
 }
+
+// Single Three.js WebGL 3D Digital Twin Viewport Component with Mouse Orbiting
+const SinglePod3DCanvas: React.FC<{
+  isolated: boolean;
+  telemetry: SensorReading;
+  dampers: DamperState[];
+  phase: SafetyPhaseStep;
+}> = ({ isolated, telemetry, dampers, phase }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const floorGroupRef = useRef<THREE.Group | null>(null);
+  const podGroupRef = useRef<THREE.Group | null>(null);
+  const waveMeshRef = useRef<THREE.Line | null>(null);
+  const screenMeshRef = useRef<THREE.Mesh | null>(null);
+  const damperLedsRef = useRef<THREE.Mesh[]>([]);
+  const damperPistonsRef = useRef<THREE.Group[]>([]);
+  const sensorLedRef = useRef<THREE.Mesh | null>(null);
+
+  const isDraggingRef = useRef<boolean>(false);
+  const previousMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const cameraAngleRef = useRef<{ theta: number; phi: number; radius: number }>({
+    theta: 0.35,
+    phi: Math.PI / 3.5,
+    radius: 12.0,
+  });
+
+  const isShakingPhase = phase === 'DETECT';
+  const isSecuredPhase = phase === 'SECURE' || phase === 'RECOVERY';
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const width = container.clientWidth || 640;
+    const height = container.clientHeight || 400;
+
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+    scene.background = new THREE.Color(0x050914);
+
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    cameraRef.current = camera;
+
+    const updateCameraPosition = () => {
+      const { theta, phi, radius } = cameraAngleRef.current;
+      camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+      camera.position.y = radius * Math.cos(phi) + 0.5;
+      camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+      camera.lookAt(0, 0.5, 0);
+    };
+    updateCameraPosition();
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    rendererRef.current = renderer;
+
+    while (container.firstChild) container.removeChild(container.firstChild);
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    mainLight.position.set(5, 12, 8);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.bias = -0.0005;
+    scene.add(mainLight);
+
+    const podInteriorLight = new THREE.PointLight(0xe0f2fe, 3.5, 12);
+    podInteriorLight.position.set(0, 2.0, 0);
+    scene.add(podInteriorLight);
+
+    const cyanRimLight = new THREE.PointLight(0x06b6d4, 3.0, 15);
+    cyanRimLight.position.set(-2, 2, 4);
+    scene.add(cyanRimLight);
+    
+    const cyanRimLight2 = new THREE.PointLight(0x06b6d4, 2.0, 15);
+    cyanRimLight2.position.set(4, 1, 3);
+    scene.add(cyanRimLight2);
+
+    // MATERIALS
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+    const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.4 });
+    const platformMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.2, roughness: 0.8 });
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x38bdf8,
+      transmission: 0.95,
+      opacity: 1.0,
+      transparent: true,
+      roughness: 0.1,
+      ior: 1.5,
+      reflectivity: 0.5,
+      side: THREE.DoubleSide
+    });
+    const cyanGlowMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+    const bedFrameMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.5, roughness: 0.2 });
+    const mattressMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
+    const patientSkinMat = new THREE.MeshStandardMaterial({ color: 0xfcbda1, roughness: 0.4 });
+    const patientGownMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, roughness: 0.6 });
+    const blanketMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+    const machineWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.1 });
+    const screenMat = new THREE.MeshBasicMaterial({ color: 0x0369a1 });
+
+    // 1. FLOOR
+    const floorGroup = new THREE.Group();
+    floorGroupRef.current = floorGroup;
+    scene.add(floorGroup);
+
+    const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(16, 0.2, 10), floorMat);
+    floorMesh.position.set(0, -2.0, 0);
+    floorMesh.receiveShadow = true;
+    floorGroup.add(floorMesh);
+
+    const gridHelper = new THREE.GridHelper(16, 16, 0x0284c7, 0x1e2d4a);
+    gridHelper.position.set(0, -1.89, 0);
+    floorGroup.add(gridHelper);
+
+    // Wave Line
+    const wavePoints: THREE.Vector3[] = [];
+    for (let i = -7; i <= 7; i += 0.2) {
+      wavePoints.push(new THREE.Vector3(i, -1.8, 4.0));
+    }
+    const waveGeo = new THREE.BufferGeometry().setFromPoints(wavePoints);
+    const waveMat = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 2 });
+    const waveMesh = new THREE.Line(waveGeo, waveMat);
+    waveMeshRef.current = waveMesh;
+    floorGroup.add(waveMesh);
+
+    // 2. ISOLATION PLATFORM
+    const platformGroup = new THREE.Group();
+    scene.add(platformGroup);
+
+    // Lower base
+    const lowerDeck = new THREE.Mesh(new THREE.BoxGeometry(10, 0.2, 5.0), darkMetalMat);
+    lowerDeck.position.set(0, -1.7, 0);
+    lowerDeck.receiveShadow = true;
+    platformGroup.add(lowerDeck);
+
+    // Upper platform
+    const upperDeck = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.2, 4.5), platformMat);
+    upperDeck.position.set(0, -1.0, 0);
+    upperDeck.castShadow = true;
+    upperDeck.receiveShadow = true;
+    platformGroup.add(upperDeck);
+
+    // 4 Isolators
+    damperLedsRef.current = [];
+    damperPistonsRef.current = [];
+    const damperPositions = [
+      [-3.8, 1.6], [3.8, 1.6],
+      [-3.8, -1.6], [3.8, -1.6]
+    ];
+    
+    damperPositions.forEach(([xPos, zPos]) => {
+      const dGroup = new THREE.Group();
+      dGroup.position.set(xPos, -1.35, zPos);
+
+      // Base
+      const baseHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.2, 16), darkMetalMat);
+      baseHousing.position.y = -0.15;
+      dGroup.add(baseHousing);
+      
+      // Top mount
+      const topHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16), darkMetalMat);
+      topHousing.position.y = 0.2;
+      dGroup.add(topHousing);
+
+      const pistonGroup = new THREE.Group();
+      
+      // Rubber bellows (using multiple torus or lathe)
+      for(let i=0; i<3; i++) {
+         const bellow = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 8, 16), darkMetalMat);
+         bellow.rotation.x = Math.PI / 2;
+         bellow.position.y = -0.05 + i * 0.12;
+         pistonGroup.add(bellow);
+      }
+      dGroup.add(pistonGroup);
+      damperPistonsRef.current.push(pistonGroup);
+
+      // LED ring
+      const statusRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.03, 8, 24),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+      );
+      statusRing.rotation.x = Math.PI / 2;
+      statusRing.position.y = -0.15;
+      dGroup.add(statusRing);
+      damperLedsRef.current.push(statusRing);
+
+      platformGroup.add(dGroup);
+    });
+
+    // 3. POD CAPSULE (The Hero Model)
+    const podGroup = new THREE.Group();
+    podGroupRef.current = podGroup;
+    scene.add(podGroup);
+    
+    // Capsule dimensions
+    const podLen = 7.0;
+    const podRad = 2.0;
+
+    // Create the capsule shell using ExtrudeGeometry for the open face
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, podRad, -Math.PI/2, Math.PI/2, false); // Right half
+    shape.absarc(0, 0, podRad + 0.15, Math.PI/2, -Math.PI/2, true); // Outer right half
+    
+    const extrudeSettings = { depth: podLen, bevelEnabled: false, curveSegments: 32 };
+    
+    // Actually, a simpler way for a horizontal capsule with a front opening:
+    // A cylinder with thetaLength < 2*PI, aligned along X
+    
+    // MAIN SHELL (Metal back and bottom/top)
+    const shellGeo = new THREE.CylinderGeometry(podRad+0.1, podRad+0.1, podLen, 32, 1, false, Math.PI * 0.1, Math.PI * 1.5);
+    const shellMesh = new THREE.Mesh(shellGeo, metalMat);
+    shellMesh.rotation.z = Math.PI / 2;
+    shellMesh.position.y = 1.0;
+    shellMesh.castShadow = true;
+    shellMesh.receiveShadow = true;
+    podGroup.add(shellMesh);
+    
+    // END CAPS (Rounded domes)
+    const domeGeo = new THREE.SphereGeometry(podRad+0.1, 32, 16, 0, Math.PI*2, 0, Math.PI/2);
+    
+    const leftDome = new THREE.Mesh(domeGeo, metalMat);
+    leftDome.rotation.z = Math.PI / 2;
+    leftDome.position.set(-podLen/2, 1.0, 0);
+    podGroup.add(leftDome);
+
+    const rightDome = new THREE.Mesh(domeGeo, metalMat);
+    rightDome.rotation.z = -Math.PI / 2;
+    rightDome.position.set(podLen/2, 1.0, 0);
+    podGroup.add(rightDome);
+    
+    // GLASS FRONT
+    const glassGeo = new THREE.CylinderGeometry(podRad, podRad, podLen-0.2, 32, 1, false, -Math.PI * 0.4, Math.PI * 0.5);
+    const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+    glassMesh.rotation.z = Math.PI / 2;
+    glassMesh.position.y = 1.0;
+    podGroup.add(glassMesh);
+    
+    // CYAN GLOW RING (Front rim)
+    const ringGeo = new THREE.TorusGeometry(podRad-0.05, 0.05, 16, 64, Math.PI * 1.5);
+    const glowRing1 = new THREE.Mesh(ringGeo, cyanGlowMat);
+    glowRing1.position.set(-podLen/2 + 0.2, 1.0, 0);
+    glowRing1.rotation.y = Math.PI / 2;
+    glowRing1.rotation.z = -Math.PI * 0.25;
+    podGroup.add(glowRing1);
+    
+    const glowRing2 = glowRing1.clone();
+    glowRing2.position.set(podLen/2 - 0.2, 1.0, 0);
+    podGroup.add(glowRing2);
+    
+    const frontGlowFrameGeo = new THREE.CylinderGeometry(podRad, podRad, 0.1, 32, 1, true, -Math.PI * 0.4, Math.PI * 0.5);
+    const frontGlow1 = new THREE.Mesh(frontGlowFrameGeo, cyanGlowMat);
+    frontGlow1.rotation.z = Math.PI / 2;
+    frontGlow1.position.set(-1.0, 1.0, 0);
+    podGroup.add(frontGlow1);
+
+    // Inner Floor
+    const innerFloor = new THREE.Mesh(new THREE.BoxGeometry(podLen-0.5, 0.1, podRad*1.5), darkMetalMat);
+    innerFloor.position.set(0, -0.6, 0.2);
+    innerFloor.receiveShadow = true;
+    podGroup.add(innerFloor);
+
+    // 4. DIALYSIS BED
+    const bedGroup = new THREE.Group();
+    bedGroup.position.set(-0.8, -0.4, 0.2);
+    
+    const bedBase = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.3, 1.2), bedFrameMat);
+    bedBase.castShadow = true;
+    bedBase.receiveShadow = true;
+    bedGroup.add(bedBase);
+    
+    const backRest = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), bedFrameMat);
+    backRest.position.set(-1.4, 0.3, 0);
+    backRest.rotation.z = Math.PI / 6;
+    bedGroup.add(backRest);
+    
+    const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.15, 1.1), mattressMat);
+    mattress.position.set(0.6, 0.22, 0);
+    bedGroup.add(mattress);
+    
+    const backMattress = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.15, 1.1), mattressMat);
+    backMattress.position.set(-1.4, 0.35, 0);
+    backMattress.rotation.z = Math.PI / 6;
+    bedGroup.add(backMattress);
+    
+    const bedPillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.8), blanketMat);
+    bedPillow.position.set(-1.7, 0.55, 0);
+    bedPillow.rotation.z = Math.PI / 6;
+    bedGroup.add(bedPillow);
+    
+    // 5. PATIENT (Realistic Humanoid structure)
+    const patientGroup = new THREE.Group();
+    
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), patientSkinMat);
+    head.position.set(-1.6, 0.7, 0);
+    patientGroup.add(head);
+    
+    // Torso (wearing gown)
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.8, 16, 16), patientGownMat);
+    torso.rotation.z = Math.PI / 2 + Math.PI / 12;
+    torso.position.set(-0.8, 0.5, 0);
+    patientGroup.add(torso);
+    
+    // Blanket covering lower body
+    const blanket = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.5, 16, 16), blanketMat);
+    blanket.rotation.z = Math.PI / 2;
+    blanket.position.set(0.6, 0.45, 0);
+    patientGroup.add(blanket);
+    
+    // Visible Arm (Left)
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.5, 16, 16), patientSkinMat);
+    arm.rotation.z = Math.PI / 2;
+    arm.position.set(-0.8, 0.4, 0.4);
+    patientGroup.add(arm);
+    
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), patientSkinMat);
+    hand.position.set(-0.4, 0.38, 0.4);
+    patientGroup.add(hand);
+
+    bedGroup.add(patientGroup);
+    podGroup.add(bedGroup);
+
+    // 6. DIALYSIS MACHINE
+    const machineGroup = new THREE.Group();
+    machineGroup.position.set(1.8, -0.5, 0.3);
+    
+    // Chassis
+    const machineBase = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.8), machineWhiteMat);
+    machineBase.position.y = 0.9;
+    machineBase.castShadow = true;
+    machineBase.receiveShadow = true;
+    machineGroup.add(machineBase);
+    
+    // Screen Bezel & Display
+    const screenBezel = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.1), darkMetalMat);
+    screenBezel.position.set(0, 1.4, 0.41);
+    machineGroup.add(screenBezel);
+    
+    screenMeshRef.current = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.5), screenMat);
+    screenMeshRef.current.position.set(0, 1.4, 0.47);
+    machineGroup.add(screenMeshRef.current);
+    
+    // Pump section
+    const pumpModule = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.3), darkMetalMat);
+    pumpModule.position.set(0, 0.7, 0.45);
+    machineGroup.add(pumpModule);
+    
+    const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 16), metalMat);
+    rotor.rotation.x = Math.PI / 2;
+    rotor.position.set(0, 0.7, 0.6);
+    machineGroup.add(rotor);
+
+    // IV Pole on Machine
+    const ivPole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8), metalMat);
+    ivPole.position.set(-0.3, 2.2, -0.2);
+    machineGroup.add(ivPole);
+    
+    const ivBag1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25, 16), new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transmission: 0.8, opacity: 1, transparent: true }));
+    ivBag1.position.set(-0.45, 2.6, -0.2);
+    machineGroup.add(ivBag1);
+    
+    const ivBag2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25, 16), new THREE.MeshPhysicalMaterial({ color: 0xfca5a5, transmission: 0.8, opacity: 1, transparent: true }));
+    ivBag2.position.set(-0.15, 2.6, -0.2);
+    machineGroup.add(ivBag2);
+
+    podGroup.add(machineGroup);
+
+    // 7. MEDICAL TUBING
+    // Tube from Machine to Patient Hand
+    const tube1Pts = [
+      new THREE.Vector3(1.8, 0.2, 0.9),
+      new THREE.Vector3(1.0, 0.1, 1.0),
+      new THREE.Vector3(-0.2, 0.0, 0.8),
+      new THREE.Vector3(-1.2, -0.02, 0.6)
+    ];
+    const tube1Curve = new THREE.CatmullRomCurve3(tube1Pts);
+    const tube1Geo = new THREE.TubeGeometry(tube1Curve, 20, 0.02, 8, false);
+    const tube1Mesh = new THREE.Mesh(tube1Geo, new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+    podGroup.add(tube1Mesh);
+    
+    const tube2Pts = [
+      new THREE.Vector3(1.7, 0.2, 0.9),
+      new THREE.Vector3(1.0, 0.05, 0.9),
+      new THREE.Vector3(-0.2, -0.05, 0.7),
+      new THREE.Vector3(-1.2, -0.02, 0.6)
+    ];
+    const tube2Curve = new THREE.CatmullRomCurve3(tube2Pts);
+    const tube2Geo = new THREE.TubeGeometry(tube2Curve, 20, 0.02, 8, false);
+    const tube2Mesh = new THREE.Mesh(tube2Geo, new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
+    podGroup.add(tube2Mesh);
+
+    // 8. SENSOR MODULE
+    const sensorChip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.3), darkMetalMat);
+    sensorChip.position.set(3.2, -0.5, 0.8);
+    podGroup.add(sensorChip);
+    
+    const sensorLed = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), cyanGlowMat);
+    sensorLed.position.set(3.2, -0.38, 0.8);
+    sensorLedRef.current = sensorLed;
+    podGroup.add(sensorLed);
+
+    // CONTROLS
+    const onMouseDown = (e: MouseEvent) => {
+      isDraggingRef.current = true;
+      previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaX = e.clientX - previousMousePositionRef.current.x;
+      const deltaY = e.clientY - previousMousePositionRef.current.y;
+
+      cameraAngleRef.current.theta -= deltaX * 0.01;
+      cameraAngleRef.current.phi = Math.max(
+        Math.PI / 12,
+        Math.min(Math.PI / 2.2, cameraAngleRef.current.phi - deltaY * 0.01)
+      );
+
+      previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
+      updateCameraPosition();
+    };
+
+    const onMouseUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      cameraAngleRef.current.radius = Math.max(
+        6.0,
+        Math.min(25.0, cameraAngleRef.current.radius + e.deltaY * 0.01)
+      );
+      updateCameraPosition();
+    };
+
+    container.addEventListener('pointerdown', onMouseDown);
+    window.addEventListener('pointermove', onMouseMove);
+    window.addEventListener('pointerup', onMouseUp);
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    // RENDER LOOP
+    let animationFrameId: number;
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+    };
+    animate();
+
+    const handleResize = () => {
+      if (!container || !rendererRef.current || !cameraRef.current) return;
+      const w = container.clientWidth || 640;
+      const h = container.clientHeight || 400;
+      cameraRef.current.aspect = w / h;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(w, h);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      container.removeEventListener('pointerdown', onMouseDown);
+      window.removeEventListener('pointermove', onMouseMove);
+      window.removeEventListener('pointerup', onMouseUp);
+      container.removeEventListener('wheel', onWheel);
+      window.removeEventListener('resize', handleResize);
+      renderer.dispose();
+    };
+  }, [isolated]);
+
+  useEffect(() => {
+    // Kinematic motion
+    const floorAmp = (telemetry.floorMotion / 100) * 0.8;
+    const podAmp = (telemetry.podMotion / 100) * 0.7;
+
+    const floorX = telemetry.x * floorAmp;
+    const podX = telemetry.x * podAmp;
+    const podZ = (telemetry.y * podAmp) / 2;
+    const podRotZ = telemetry.x * (podAmp / 6);
+
+    if (floorGroupRef.current) {
+      floorGroupRef.current.position.x = floorX;
+    }
+
+    if (podGroupRef.current) {
+      podGroupRef.current.position.x = podX;
+      podGroupRef.current.position.z = podZ;
+      podGroupRef.current.rotation.z = podRotZ;
+    }
+
+    if (sensorLedRef.current) {
+      const mat = sensorLedRef.current.material as THREE.MeshBasicMaterial;
+      if (isShakingPhase) mat.color.setHex(0xf59e0b);
+      else if (isSecuredPhase) mat.color.setHex(0x10b981);
+      else mat.color.setHex(0x06b6d4);
+    }
+
+    damperLedsRef.current.forEach((led, idx) => {
+      const dState = dampers[idx];
+      const mat = led.material as THREE.MeshBasicMaterial;
+      const pistonGroup = damperPistonsRef.current[idx];
+
+      if (!isolated) {
+        mat.color.setHex(0x475569);
+        if (pistonGroup) pistonGroup.position.y = 0;
+      } else if (dState.status === 'ACTIVE' || dState.status === 'LOCKED') {
+        mat.color.setHex(0x10b981);
+        if (pistonGroup) pistonGroup.position.y = -0.15;
+      } else if (dState.status === 'ENGAGING') {
+        mat.color.setHex(0xf59e0b);
+        if (pistonGroup) pistonGroup.position.y = -0.07;
+      } else {
+        mat.color.setHex(0x38bdf8);
+        if (pistonGroup) pistonGroup.position.y = 0;
+      }
+    });
+
+    if (waveMeshRef.current) {
+      const geo = waveMeshRef.current.geometry;
+      const posAttr = geo.attributes.position;
+      if (posAttr) {
+        const timeArr = Array.from({ length: posAttr.count }, (_, i) => {
+          const x = -7 + i * 0.2;
+          const y = -1.8 + Math.sin(x * 3 + Date.now() * 0.01) * (telemetry.floorMotion / 100) * 0.4;
+          return new THREE.Vector3(x, y, 4.0);
+        });
+        geo.setFromPoints(timeArr);
+        geo.computeBoundingSphere();
+      }
+    }
+  }, [telemetry, dampers, isolated, isShakingPhase, isSecuredPhase]);
+
+  return (
+    <div ref={containerRef} className="w-full h-full min-h-[400px] relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing" />
+  );
+};
 
 export const DialysisDigitalTwin: React.FC<DigitalTwinProps> = ({
   phase,
@@ -16,296 +567,115 @@ export const DialysisDigitalTwin: React.FC<DigitalTwinProps> = ({
   dampers,
   isSimulating,
   peakG,
+  isIsolationEnabled,
+  compareMode,
 }) => {
   const isShakingPhase = phase === 'DETECT';
-  const isDampeningPhase = phase === 'STABILIZE';
+  const isIsolatingPhase = phase === 'ISOLATE' || phase === 'PROTECT';
   const isSecuredPhase = phase === 'SECURE' || phase === 'RECOVERY';
 
-  // Kinematic motion calculation (MODERATE: 4-8px, SEVERE: 8-15px, decays to zero during STABILIZE)
-  const movementAmplitude = isShakingPhase ? 14 : isDampeningPhase ? 2.5 : 0.6;
-  const offsetX = (telemetry.x * movementAmplitude).toFixed(2);
-  const offsetY = ((telemetry.y * movementAmplitude) / 2).toFixed(2);
-  const tiltDeg = (telemetry.x * (movementAmplitude / 4)).toFixed(2);
-
-  const platformGlow = isShakingPhase
-    ? 'drop-shadow-[0_0_25px_rgba(239,68,68,0.65)]'
-    : isDampeningPhase
-    ? 'drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]'
-    : isSecuredPhase
-    ? 'drop-shadow-[0_0_20px_rgba(16,185,129,0.5)]'
-    : 'drop-shadow-[0_0_12px_rgba(6,182,212,0.25)]';
-
   return (
-    <div className="relative w-full h-[440px] lg:h-[480px] rounded-xl bg-console-panel border border-console-border overflow-hidden flex flex-col justify-between p-4 shadow-2xl">
-      {/* Background Grid */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#1e2d4a_1px,transparent_1px)] [background-size:16px_16px]" />
+    <div className="relative w-full h-[500px] lg:h-[540px] rounded-xl bg-console-panel border border-console-border overflow-hidden flex flex-col justify-between p-4 shadow-2xl">
+      {/* Background Technical Grid */}
+      <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#1e2d4a_1px,transparent_1px)] [background-size:16px_16px]" />
 
-      {/* Top Banner */}
+      {/* Top Banner Tag */}
       <div className="relative z-10 flex items-center justify-between bg-console-card/90 border border-console-border px-3.5 py-2 rounded-lg backdrop-blur-md font-mono text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-          <span className="text-slate-200 font-bold tracking-wider uppercase">
-            HERO DIGITAL TWIN — DIALYSIS UNIT &amp; STABILIZATION PLATFORM
+          <ShieldCheck className="w-4 h-4 text-cyan-400 animate-pulse" />
+          <span className="text-slate-100 font-bold tracking-wider uppercase">
+            {compareMode ? '🔀 DUAL POD SYNCHRONIZED COMPARISON MODE (WITHOUT ESDS vs WITH ESDS)' : 'PROTECTED DIALYSIS POD'}
+          </span>
+          <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">
+            &bull; Real-Time Three.js 3D Digital Twin Simulation (Interactive Orbit Enabled)
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-slate-400">STATE: <strong className={isShakingPhase ? "text-red-400 font-bold animate-pulse" : isDampeningPhase ? "text-amber-400 font-bold" : isSecuredPhase ? "text-emerald-400 font-bold" : "text-emerald-400"}>
-            {isShakingPhase ? "🔴 EARTHQUAKE DETECTED" : isDampeningPhase ? "🟡 STABILIZATION ACTIVE" : isSecuredPhase ? "🟢 EQUIPMENT SECURED" : "🟢 STABLE"}
+        <div className="flex items-center gap-4 text-slate-400">
+          <span>ISOLATION: <strong className={isIsolationEnabled ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+            {isIsolationEnabled ? "ACTIVE (ON)" : "DISABLED (OFF)"}
           </strong></span>
+          <span className="hidden sm:inline">PEAK G: <strong className="text-amber-400 font-mono">{peakG.toFixed(2)}g</strong></span>
         </div>
       </div>
 
-      {/* Main SVG Graphics Canvas */}
-      <div className="relative flex-1 flex items-center justify-center my-1 select-none">
-        
-        {/* Floor Ripple Rings during Earthquake */}
-        {isShakingPhase && (
-          <div className="absolute bottom-8 w-[420px] h-20 rounded-full border-2 border-red-500/40 animate-ping pointer-events-none" />
-        )}
-        {isDampeningPhase && (
-          <div className="absolute bottom-8 w-[360px] h-16 rounded-full border border-amber-500/40 animate-pulse pointer-events-none" />
-        )}
-
-        {/* Dynamic Motion Wrapper (Digital Twin Only Shakes, UI Stays Stable!) */}
-        <div
-          className={`transition-transform duration-75 ease-out ${platformGlow}`}
-          style={{
-            transform: `translate(${offsetX}px, ${offsetY}px) rotate(${tiltDeg}deg)`,
-          }}
-        >
-          <svg
-            width="530"
-            height="330"
-            viewBox="0 0 530 330"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-auto h-[290px] lg:h-[330px]"
-          >
-            <defs>
-              <linearGradient id="machineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#1e293b" />
-                <stop offset="50%" stopColor="#0f172a" />
-                <stop offset="100%" stopColor="#080d1a" />
-              </linearGradient>
-              <linearGradient id="platformGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#334155" />
-                <stop offset="50%" stopColor="#1e2d4a" />
-                <stop offset="100%" stopColor="#0f172a" />
-              </linearGradient>
-              <linearGradient id="bedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#1e2d4a" />
-                <stop offset="100%" stopColor="#0b1326" />
-              </linearGradient>
-              <linearGradient id="damperActiveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#10b981" />
-                <stop offset="100%" stopColor="#047857" />
-              </linearGradient>
-              <linearGradient id="damperEngageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#f59e0b" />
-                <stop offset="100%" stopColor="#b45309" />
-              </linearGradient>
-            </defs>
-
-            {/* FLOOR REFERENCE PLANE */}
-            <ellipse cx="265" cy="310" rx="245" ry="16" fill="#030712" opacity="0.85" />
-            <path d="M 20 310 L 510 310" stroke="#1e2d4a" strokeWidth="2" strokeDasharray="6 6" />
-
-            {/* PATIENT SAFETY ZONE (PATIENT BED & SILHOUETTE) */}
-            <g id="patient-safety-zone">
-              <rect x="25" y="215" width="145" height="40" rx="6" fill="url(#bedGrad)" stroke="#1e2d4a" strokeWidth="2" />
-              <rect x="30" y="210" width="135" height="12" rx="3" fill="#334155" opacity="0.7" />
-              <rect x="35" y="255" width="8" height="50" rx="2" fill="#1e293b" />
-              <rect x="150" y="255" width="8" height="50" rx="2" fill="#1e293b" />
-
-              {/* Pillow & Patient Body */}
-              <rect x="35" y="198" width="30" height="12" rx="4" fill="#475569" />
-              <circle cx="50" cy="190" r="11" fill="#64748b" />
-              <path d="M 62 198 Q 100 195 155 208 L 155 218 L 62 218 Z" fill="#334155" stroke="#475569" strokeWidth="1" />
-              <path d="M 75 204 L 115 204" stroke="#64748b" strokeWidth="4" strokeLinecap="round" />
-
-              {/* Label */}
-              <rect x="32" y="224" width="130" height="18" rx="3" fill="#080c14" opacity="0.9" stroke="#06b6d4" strokeWidth="1" />
-              <text x="97" y="236" fill="#06b6d4" fontSize="8" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
-                PATIENT SAFETY ZONE
-              </text>
-            </g>
-
-            {/* BLOOD TUBING LINES */}
-            <path d="M 115 204 Q 160 210 245 190" stroke="#ef4444" strokeWidth="2.5" fill="none" />
-            <path d="M 115 208 Q 165 225 240 215" stroke="#3b82f6" strokeWidth="2.5" fill="none" />
-
-            {/* 4 STABILIZATION DAMPERS (D01 to D04) */}
-            {/* D01 */}
-            <g id="damper-01">
-              <rect x="195" y="260" width="24" height="46" rx="4" fill="#1e293b" stroke={dampers[0].status !== 'READY' ? '#10b981' : '#334155'} strokeWidth="2" />
-              <rect
-                x="200"
-                y={dampers[0].status === 'ACTIVE' || dampers[0].status === 'LOCKED' ? '266' : dampers[0].status === 'ENGAGING' ? '274' : '280'}
-                width="14"
-                height="22"
-                fill={dampers[0].status === 'LOCKED' || dampers[0].status === 'ACTIVE' ? 'url(#damperActiveGrad)' : 'url(#damperEngageGrad)'}
-                opacity={dampers[0].status === 'READY' ? 0.35 : 1}
-              />
-            </g>
-
-            {/* D02 */}
-            <g id="damper-02">
-              <rect x="420" y="260" width="24" height="46" rx="4" fill="#1e293b" stroke={dampers[1].status !== 'READY' ? '#10b981' : '#334155'} strokeWidth="2" />
-              <rect
-                x="425"
-                y={dampers[1].status === 'ACTIVE' || dampers[1].status === 'LOCKED' ? '266' : dampers[1].status === 'ENGAGING' ? '274' : '280'}
-                width="14"
-                height="22"
-                fill={dampers[1].status === 'LOCKED' || dampers[1].status === 'ACTIVE' ? 'url(#damperActiveGrad)' : 'url(#damperEngageGrad)'}
-                opacity={dampers[1].status === 'READY' ? 0.35 : 1}
-              />
-            </g>
-
-            {/* D03 */}
-            <g id="damper-03">
-              <rect x="225" y="252" width="18" height="34" rx="3" fill="#0f172a" stroke="#1e2d4a" strokeWidth="1.5" opacity="0.8" />
-            </g>
-
-            {/* D04 */}
-            <g id="damper-04">
-              <rect x="395" y="252" width="18" height="34" rx="3" fill="#0f172a" stroke="#1e2d4a" strokeWidth="1.5" opacity="0.8" />
-            </g>
-
-            {/* STABILIZATION PLATFORM */}
-            <rect x="180" y="250" width="280" height="18" rx="4" fill="url(#platformGrad)" stroke="#3b82f6" strokeWidth="1.5" />
-            <rect x="185" y="254" width="270" height="3" fill="#60a5fa" opacity="0.7" />
-
-            {/* MAIN DIALYSIS MACHINE CONSOLE */}
-            <rect x="230" y="70" width="180" height="182" rx="12" fill="url(#machineGrad)" stroke="#334155" strokeWidth="2.5" />
-
-            {/* Caster Wheels */}
-            <circle cx="250" cy="248" r="8" fill="#334155" stroke="#0f172a" strokeWidth="2" />
-            <circle cx="390" cy="248" r="8" fill="#334155" stroke="#0f172a" strokeWidth="2" />
-
-            {/* MONITOR DISPLAY SCREEN */}
-            <rect x="248" y="85" width="144" height="75" rx="8" fill="#040812" stroke="#1e2d4a" strokeWidth="2" />
-            <rect
-              x="252"
-              y="89"
-              width="136"
-              height="67"
-              rx="6"
-              fill={isSecuredPhase ? '#022c22' : isShakingPhase ? '#450a0a' : '#0369a1'}
-              opacity="0.9"
-            />
-
-            {/* Screen Text */}
-            {isSecuredPhase ? (
-              <g>
-                <text x="320" y="118" fill="#10b981" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
-                  SAFETY MODE
-                </text>
-                <text x="320" y="134" fill="#34d399" fontSize="9" textAnchor="middle" fontFamily="monospace">
-                  EQUIPMENT SECURED
-                </text>
-              </g>
-            ) : isShakingPhase ? (
-              <g>
-                <text x="320" y="118" fill="#ef4444" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
-                  ⚠ SEISMIC EVENT
-                </text>
-                <text x="320" y="134" fill="#fca5a5" fontSize="9" textAnchor="middle" fontFamily="monospace">
-                  STABILIZING...
-                </text>
-              </g>
-            ) : (
-              <g>
-                <text x="320" y="115" fill="#e0f2fe" fontSize="11" fontWeight="bold" textAnchor="middle" fontFamily="monospace">
-                  DIALYSIS IN PROGRESS
-                </text>
-                <path d="M 265 132 Q 280 120 295 132 T 325 132 T 355 132" stroke="#38bdf8" strokeWidth="1.5" fill="none" />
-                <text x="320" y="146" fill="#94a3b8" fontSize="8" textAnchor="middle" fontFamily="monospace">
-                  FLOW: 350 mL/min
-                </text>
-              </g>
-            )}
-
-            {/* PUMP ROTOR & DIALYZER CYLINDER */}
-            <circle cx="275" cy="195" r="22" fill="#0f172a" stroke="#334155" strokeWidth="2" />
-            <circle cx="275" cy="195" r="15" fill="#1e293b" />
-            <path
-              d="M 275 180 L 275 210 M 260 195 L 290 195"
-              stroke="#06b6d4"
-              strokeWidth="2"
-              className={isShakingPhase ? 'animate-spin' : ''}
-              style={{ transformOrigin: '275px 195px' }}
-            />
-
-            <rect x="355" y="172" width="28" height="68" rx="5" fill="#0284c7" opacity="0.85" stroke="#38bdf8" strokeWidth="1.5" />
-            <line x1="355" y1="188" x2="383" y2="188" stroke="#e0f2fe" strokeWidth="1" />
-            <line x1="355" y1="204" x2="383" y2="204" stroke="#e0f2fe" strokeWidth="1" />
-
-            {/* VIRTUAL SENSOR ATTACHMENT */}
-            <g id="virtual-sensor">
-              <rect x="310" y="228" width="22" height="15" rx="3" fill="#06b6d4" stroke="#0284c7" strokeWidth="1.5" />
-              <circle cx="321" cy="235.5" r="3" fill="#ffffff" className="animate-pulse" />
-            </g>
-          </svg>
-        </div>
-
-        {/* Minimal Callout Labels */}
-        <div className="absolute top-12 right-6 flex items-center gap-2 bg-console-card/90 border border-cyan-500/40 px-2.5 py-1 rounded shadow-lg backdrop-blur text-[11px] font-mono text-cyan-300">
-          <Activity className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          <span>VIRTUAL SENSOR</span>
-        </div>
-
-        <div className="absolute bottom-14 right-6 flex items-center gap-2 bg-console-card/90 border border-slate-700 px-2.5 py-1 rounded shadow-lg backdrop-blur text-[11px] font-mono text-slate-300">
-          <Zap className="w-3.5 h-3.5 text-amber-400" />
-          <span>STABILIZATION PLATFORM</span>
-        </div>
-
-        {/* Dampers Status Badges */}
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex items-center gap-2 max-w-full overflow-x-auto px-2">
-          {dampers.map((d) => (
-            <div
-              key={d.id}
-              className={`px-2.5 py-1 rounded border text-[10px] font-mono flex items-center gap-1.5 transition-colors ${
-                d.status === 'LOCKED' || d.status === 'ACTIVE'
-                  ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300 font-bold'
-                  : d.status === 'ENGAGING'
-                  ? 'bg-amber-950/90 border-amber-500/60 text-amber-300 font-bold animate-pulse'
-                  : 'bg-slate-900/80 border-slate-800 text-slate-400'
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  d.status !== 'READY' ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'
-                }`}
-              />
-              <span>{d.name}:</span>
-              <span className="uppercase">{d.status}</span>
+      {/* Main 3D Canvas Viewport: Single Hero Pod View OR Synchronized Side-by-Side Dual View */}
+      {compareMode ? (
+        /* SYNCHRONIZED DUAL 3D VIEWPORTS SIDE-BY-SIDE IN COMPARE MODE */
+        <div className="relative flex-1 grid grid-cols-2 gap-4 items-center justify-center my-1 select-none">
+          {/* LEFT: WITHOUT ESDS (ISOLATION OFF) */}
+          <div className="relative flex flex-col items-center justify-center h-full border border-rose-500/40 rounded-xl bg-rose-950/20 p-2 overflow-hidden">
+            <div className="absolute top-2 left-2 z-10 bg-rose-950/90 border border-rose-500/60 px-2.5 py-0.5 rounded text-[10px] font-mono text-rose-300 font-bold flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 text-rose-400" />
+              <span>WITHOUT ESDS (ISOLATION OFF)</span>
             </div>
-          ))}
-        </div>
-
-        {/* Equipment Secured Banner */}
-        {isSecuredPhase && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-emerald-950/95 border border-emerald-400 px-6 py-3.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fade-in glow-safe z-20">
-            <ShieldCheck className="w-8 h-8 text-emerald-400 animate-bounce" />
-            <div>
-              <h3 className="text-emerald-300 font-mono font-bold text-sm lg:text-base tracking-wider uppercase">
-                EQUIPMENT SECURED
-              </h3>
-              <p className="text-emerald-400/80 text-xs font-mono">
-                Active Dampening Locked • Patient Safety Zone Protected
-              </p>
+            <SinglePod3DCanvas isolated={false} telemetry={telemetry} dampers={dampers} phase={phase} />
+            <div className="w-full flex justify-between text-[10px] font-mono text-rose-300 px-2 pt-1 border-t border-rose-900/40 z-10">
+              <span>POD MOTION: <strong>HIGH ({telemetry.floorMotion}%)</strong></span>
+              <span className="font-bold text-rose-400">UNPROTECTED</span>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Footer */}
+          {/* RIGHT: WITH ESDS (ISOLATION ON) */}
+          <div className="relative flex flex-col items-center justify-center h-full border border-emerald-500/40 rounded-xl bg-emerald-950/20 p-2 overflow-hidden">
+            <div className="absolute top-2 left-2 z-10 bg-emerald-950/90 border border-emerald-500/60 px-2.5 py-0.5 rounded text-[10px] font-mono text-emerald-300 font-bold flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span>WITH ESDS (ISOLATION ON)</span>
+            </div>
+            <SinglePod3DCanvas isolated={true} telemetry={telemetry} dampers={dampers} phase={phase} />
+            <div className="w-full flex justify-between text-[10px] font-mono text-emerald-300 px-2 pt-1 border-t border-emerald-900/40 z-10">
+              <span>POD MOTION: <strong>LOW ({telemetry.podMotion}%)</strong></span>
+              <span className="font-bold text-emerald-400">PROTECTED</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* SINGLE LARGE HERO 3D VIEWPORT WITH HUD OVERLAY CALLOUTS MATCHING REFERENCE */
+        <div className="relative flex-1 flex items-center justify-center my-1 select-none overflow-hidden">
+          <SinglePod3DCanvas isolated={isIsolationEnabled} telemetry={telemetry} dampers={dampers} phase={phase} />
+
+          {/* Leader Annotation Overlay Tags matching Reference Image */}
+          <div className="absolute top-10 left-10 flex items-center gap-2 bg-console-card/95 border border-emerald-500/50 px-3.5 py-2 rounded-lg shadow-2xl backdrop-blur-md text-xs font-mono text-emerald-300 pointer-events-none z-10">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span className="font-bold tracking-wider">PATIENT SAFETY ZONE</span>
+          </div>
+
+          <div className="absolute top-10 right-10 flex items-center gap-2 bg-console-card/95 border border-cyan-500/50 px-3.5 py-2 rounded-lg shadow-2xl backdrop-blur-md text-xs font-mono text-cyan-300 pointer-events-none z-10">
+            <Cpu className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <span>DIALYSIS MACHINE</span>
+          </div>
+
+          {/* Damper Callout Labels D1-D4 */}
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-console-card/90 border border-slate-700/80 px-4 py-1.5 rounded-lg shadow-xl backdrop-blur text-[11px] font-mono text-slate-300 pointer-events-none z-10">
+            <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-emerald-400" /> D1</span>
+            <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-emerald-400" /> D2</span>
+            <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-emerald-400" /> D3</span>
+            <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-emerald-400" /> D4</span>
+          </div>
+
+          {/* Secured Banner Overlay */}
+          {isSecuredPhase && isIsolationEnabled && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-emerald-950/95 border border-emerald-400 px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fade-in glow-safe z-20">
+              <ShieldCheck className="w-8 h-8 text-emerald-400 animate-bounce" />
+              <div>
+                <h3 className="text-emerald-300 font-mono font-bold text-sm lg:text-base tracking-wider uppercase">
+                  EQUIPMENT SECURED
+                </h3>
+                <p className="text-emerald-400/80 text-xs font-mono">
+                  Seismic Isolation Locked • Patient Safety Zone Protected
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Footer Info */}
       <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-console-border/60">
         <span className="flex items-center gap-1.5">
           <HeartPulse className="w-3.5 h-3.5 text-cyan-400" />
-          RETROFIT DIALYSIS SAFETY SYSTEM
+          PROTECTED DIALYSIS POD &bull; THREE.JS 3D DIGITAL TWIN
         </span>
-        <span className="text-slate-500 hidden sm:inline">SOFTWARE SIMULATION / DIGITAL TWIN</span>
+        <span className="text-slate-500 hidden sm:inline">WebGL 3D RENDER ENGINE</span>
       </div>
     </div>
   );

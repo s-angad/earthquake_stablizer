@@ -20,6 +20,8 @@ export function useSimulation() {
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState<boolean>(false);
+  const [isIsolationEnabled, setIsIsolationEnabled] = useState<boolean>(true);
+  const [compareMode, setCompareMode] = useState<boolean>(false);
 
   // Live Telemetry
   const [currentTelemetry, setCurrentTelemetry] = useState<SensorReading>({
@@ -30,17 +32,20 @@ export function useSimulation() {
     gravityVector: 0.98,
     dynamicAcceleration: 0.03,
     vibrationIntensity: 2,
+    floorMotion: 0,
+    podMotion: 0,
+    isolationEfficiency: 0,
   });
 
   const [telemetryHistory, setTelemetryHistory] = useState<SensorReading[]>([]);
   const [peakG, setPeakG] = useState<number>(0.03);
 
-  // 4 Active Dampers (D01 to D04)
+  // 4 Isolation Dampers (D1 to D4)
   const [dampers, setDampers] = useState<DamperState[]>([
-    { id: 'd1', name: 'D01', engagement: 0, status: 'READY', forceExtender: 0 },
-    { id: 'd2', name: 'D02', engagement: 0, status: 'READY', forceExtender: 0 },
-    { id: 'd3', name: 'D03', engagement: 0, status: 'READY', forceExtender: 0 },
-    { id: 'd4', name: 'D04', engagement: 0, status: 'READY', forceExtender: 0 },
+    { id: 'd1', name: 'D1', engagement: 0, status: 'READY', forceExtender: 0 },
+    { id: 'd2', name: 'D2', engagement: 0, status: 'READY', forceExtender: 0 },
+    { id: 'd3', name: 'D3', engagement: 0, status: 'READY', forceExtender: 0 },
+    { id: 'd4', name: 'D4', engagement: 0, status: 'READY', forceExtender: 0 },
   ]);
 
   // Safety Metrics
@@ -55,6 +60,10 @@ export function useSimulation() {
     signalPattern: 'NORMAL',
     equipmentStatus: 'OPERATIONAL',
     responseMode: 'MONITORING',
+    floorMotion: 0,
+    podMotion: 0,
+    isolationEfficiency: 0,
+    isIsolationEnabled: true,
   });
 
   const [alert, setAlert] = useState<EmergencyAlert | null>(null);
@@ -83,10 +92,10 @@ export function useSimulation() {
   }, []);
 
   useEffect(() => {
-    addLog('MONITOR', 'ESDS Safety Monitoring active. Sensor streaming at 100 Hz.', 'info');
+    addLog('MONITOR', 'ESDS Protected Pod Monitoring Active. Virtual Sensor streaming at 100 Hz.', 'info');
   }, [addLog]);
 
-  // High Frequency Telemetry Loop
+  // Telemetry & Motion Simulation Loop
   useEffect(() => {
     if (isPaused) return;
 
@@ -102,8 +111,19 @@ export function useSimulation() {
       let yAmp = 0;
       let zAmp = 0;
 
-      const isDampening = phase === 'STABILIZE' || phase === 'SECURE' || phase === 'RECOVERY';
-      const dampingFactor = phase === 'SECURE' || phase === 'RECOVERY' ? 0.04 : isDampening ? 0.22 : 1.0;
+      // Isolation efficiency calculation
+      const isIsolating = isIsolationEnabled && (phase === 'ISOLATE' || phase === 'PROTECT' || phase === 'SECURE' || phase === 'RECOVERY');
+      const currentIsolationEff = isIsolationEnabled
+        ? phase === 'SECURE' || phase === 'RECOVERY'
+          ? 88
+          : isIsolating
+          ? 86
+          : phase === 'DETECT'
+          ? 25
+          : 0
+        : 0;
+
+      const dampingFactor = 1.0 - currentIsolationEff / 100;
 
       if (activeScenario === 'NORMAL') {
         xAmp = Math.sin(t * 2) * 0.015;
@@ -136,6 +156,10 @@ export function useSimulation() {
 
       const vibeIntensity = Math.min(100, Math.round(dynamicAcc * 140));
 
+      // Floor Motion vs Pod Motion Calculation
+      const rawFloorMotion = activeScenario === 'NORMAL' ? 2 : Math.min(100, Math.round((intensity / 100) * 78));
+      const calculatedPodMotion = Math.round(rawFloorMotion * (1 - currentIsolationEff / 100));
+
       if (dynamicAcc > peakDynamicGRef.current) {
         peakDynamicGRef.current = dynamicAcc;
         setPeakG(dynamicAcc);
@@ -149,9 +173,19 @@ export function useSimulation() {
         gravityVector,
         dynamicAcceleration: dynamicAcc,
         vibrationIntensity: vibeIntensity,
+        floorMotion: rawFloorMotion,
+        podMotion: calculatedPodMotion,
+        isolationEfficiency: currentIsolationEff,
       };
 
       setCurrentTelemetry(newReading);
+      setMetrics((m) => ({
+        ...m,
+        floorMotion: rawFloorMotion,
+        podMotion: calculatedPodMotion,
+        isolationEfficiency: currentIsolationEff,
+        isIsolationEnabled,
+      }));
 
       setTelemetryHistory((prev) => {
         const next = [...prev, newReading];
@@ -163,9 +197,9 @@ export function useSimulation() {
     }, 30);
 
     return () => clearInterval(interval);
-  }, [activeScenario, intensity, isPaused, phase]);
+  }, [activeScenario, intensity, isIsolationEnabled, isPaused, phase]);
 
-  // Simulation Sequence Trigger (4 Core Steps)
+  // Simulation Sequence Trigger
   const startSimulation = useCallback(
     (preset: ScenarioPreset, intensityOverride?: number) => {
       clearTimers();
@@ -203,10 +237,14 @@ export function useSimulation() {
           signalPattern: 'NORMAL',
           equipmentStatus: 'OPERATIONAL',
           responseMode: 'MONITORING',
+          floorMotion: 0,
+          podMotion: 0,
+          isolationEfficiency: 0,
+          isIsolationEnabled,
         });
         setAlert(null);
         setDampers((prev) =>
-          prev.map((d) => ({ ...d, engagement: 0, status: 'READY', forceExtender: 0 }))
+          prev.map((d) => ({ ...d, engagement: 0, status: isIsolationEnabled ? 'READY' : 'DISABLED', forceExtender: 0 }))
         );
         addLog('MONITOR', 'System test initialized under NORMAL background conditions.', 'info');
         return;
@@ -243,19 +281,31 @@ export function useSimulation() {
       const isSevere = preset === 'SEVERE';
       const maxRisk = isSevere ? 92 : 64;
 
-      // STEP 1: MONITOR -> ONSET
+      // STEP 1: MONITOR (0-1.5s)
       setPhase('MONITOR');
       setSystemStatus('SYSTEM NORMAL');
-      addLog('MONITOR', `Initiating ${isSevere ? 'SEVERE' : 'MODERATE'} earthquake simulation...`, 'info');
+      addLog('MONITOR', `Initiating ${isSevere ? 'SEVERE' : 'MODERATE'} earthquake simulation. Floor motion rising...`, 'info');
 
       // STEP 2: DETECT (1.5s)
       const t1 = setTimeout(() => {
         setPhase('DETECT');
-        setSystemStatus(isSevere ? 'CRITICAL SEISMIC EVENT — EMERGENCY PROTOCOL' : 'SEISMIC EVENT DETECTED — STABILIZATION ACTIVE');
+        if (!isIsolationEnabled) {
+          setSystemStatus('UNPROTECTED — HIGH SEISMIC MOTION');
+          addLog('DETECT', 'SEISMIC MOTION DETECTED! ESDS ISOLATION IS OFF — Pod experiencing unmitigated shaking.', 'critical');
+          setDampers((prev) => prev.map((d) => ({ ...d, engagement: 0, status: 'DISABLED', forceExtender: 0 })));
+          setMetrics((m) => ({
+            ...m,
+            riskScore: maxRisk,
+            riskLevel: 'UNPROTECTED',
+            equipmentStatus: 'UNPROTECTED',
+            responseMode: 'DISABLED',
+          }));
+          return;
+        }
+
+        setSystemStatus('SEISMIC ACTIVITY DETECTED');
         addLog('DETECT', `SEISMIC MOTION DETECTED! Dynamic acceleration > ${metrics.detectionThreshold}g threshold.`, 'warning');
-        setDampers((prev) =>
-          prev.map((d) => ({ ...d, engagement: 40, status: 'ENGAGING', forceExtender: 350 }))
-        );
+        setDampers((prev) => prev.map((d) => ({ ...d, engagement: 40, status: 'ENGAGING', forceExtender: 350 })));
         setMetrics((m) => ({
           ...m,
           riskScore: maxRisk,
@@ -266,19 +316,28 @@ export function useSimulation() {
         }));
       }, 1500);
 
-      // STEP 3: STABILIZE (3.5s)
+      if (!isIsolationEnabled) {
+        // Unprotected flow stops at high shaking warning
+        const tUnprotected = setTimeout(() => {
+          setIsSimulating(false);
+        }, 6000);
+        eventTimeoutRefs.current.push(t1, tUnprotected);
+        return;
+      }
+
+      // STEP 3: ISOLATE (3.0s)
       const t2 = setTimeout(() => {
-        setPhase('STABILIZE');
-        setSystemStatus(isSevere ? 'CRITICAL SEISMIC EVENT — EMERGENCY PROTOCOL' : 'SEISMIC EVENT DETECTED — STABILIZATION ACTIVE');
-        addLog('STABILIZE', 'STABILIZATION ACTIVE: 4/4 Electro-Hydraulic Dampers engaged. Counteracting shaking.', 'warning');
+        setPhase('ISOLATE');
+        setSystemStatus('SEISMIC ISOLATION ACTIVE');
+        addLog('ISOLATE', 'SEISMIC ISOLATION ACTIVE: 4/4 Dampers active. Counteracting kinetic shaking.', 'warning');
         
         const alertObj: EmergencyAlert = {
           id: Math.random().toString(),
           level: isSevere ? 'CRITICAL' : 'WARNING',
           title: isSevere ? 'CRITICAL SEISMIC EVENT' : '⚠ SEISMIC EVENT DETECTED',
           message: isSevere
-            ? 'High seismic activity detected! Emergency safety protocol active. Equipment active dampening engaged.'
-            : 'Moderate seismic activity detected. Equipment stabilization initiated.',
+            ? 'High seismic activity detected! Emergency safety protocol active. Pod isolation active.'
+            : 'Moderate seismic activity detected. ESDS Pod isolation initiated.',
           statusText: 'PROTECTED',
           timestamp: new Date().toLocaleTimeString(),
         };
@@ -292,13 +351,20 @@ export function useSimulation() {
             forceExtender: isSevere ? 1900 : 1250,
           }))
         );
-      }, 3500);
+      }, 3000);
 
-      // STEP 4: SECURE (6.5s)
+      // STEP 4: PROTECT (5.5s)
       const t3 = setTimeout(() => {
+        setPhase('PROTECT');
+        setSystemStatus('SEISMIC ISOLATION ACTIVE');
+        addLog('PROTECT', 'PATIENT SAFETY ZONE PROTECTION: Pod motion reduced by 86%. Floor motion isolated.', 'success');
+      }, 5500);
+
+      // STEP 5: SECURE (7.5s)
+      const t4 = setTimeout(() => {
         setPhase('SECURE');
         setSystemStatus('EQUIPMENT SECURED');
-        addLog('SECURE', 'EQUIPMENT SECURED: Machine movement reduced to baseline. Platform locked.', 'success');
+        addLog('SECURE', 'EQUIPMENT SECURED: Pod stabilized. Dampers locked in safe state.', 'success');
         setMetrics((m) => ({
           ...m,
           riskLevel: 'CONTROLLED',
@@ -312,20 +378,20 @@ export function useSimulation() {
             forceExtender: 850,
           }))
         );
-      }, 6500);
+      }, 7500);
 
-      // RECOVERY MODAL (8.5s)
-      const t4 = setTimeout(() => {
+      // RECOVERY MODAL (9.5s)
+      const t5 = setTimeout(() => {
         setPhase('RECOVERY');
         setSystemStatus('RECOVERY SUMMARY');
-        addLog('RECOVERY', 'Earthquake simulation complete. Final Equipment State: SECURED.', 'success');
+        addLog('RECOVERY', 'Earthquake simulation complete. Final Pod State: SECURED.', 'success');
         setIsSimulating(false);
         setShowRecoveryModal(true);
-      }, 8500);
+      }, 9500);
 
-      eventTimeoutRefs.current.push(t1, t2, t3, t4);
+      eventTimeoutRefs.current.push(t1, t2, t3, t4, t5);
     },
-    [addLog, clearTimers, metrics.detectionThreshold]
+    [addLog, clearTimers, isIsolationEnabled, metrics.detectionThreshold]
   );
 
   const resetSystem = useCallback(() => {
@@ -351,15 +417,19 @@ export function useSimulation() {
       signalPattern: 'NORMAL',
       equipmentStatus: 'OPERATIONAL',
       responseMode: 'MONITORING',
+      floorMotion: 0,
+      podMotion: 0,
+      isolationEfficiency: 0,
+      isIsolationEnabled,
     });
 
     setAlert(null);
     setDampers((prev) =>
-      prev.map((d) => ({ ...d, engagement: 0, status: 'READY', forceExtender: 0 }))
+      prev.map((d) => ({ ...d, engagement: 0, status: isIsolationEnabled ? 'READY' : 'DISABLED', forceExtender: 0 }))
     );
 
-    addLog('MONITOR', 'System reset. ESDS returned to normal monitoring mode.', 'info');
-  }, [addLog, clearTimers]);
+    addLog('MONITOR', 'System reset. ESDS Pod returned to normal monitoring mode.', 'info');
+  }, [addLog, clearTimers, isIsolationEnabled]);
 
   const pauseSimulation = useCallback(() => {
     setIsPaused((p) => !p);
@@ -367,6 +437,14 @@ export function useSimulation() {
 
   const acknowledgeAlert = useCallback(() => {
     setAlert(null);
+  }, []);
+
+  const toggleIsolation = useCallback(() => {
+    setIsIsolationEnabled((prev) => !prev);
+  }, []);
+
+  const toggleCompareMode = useCallback(() => {
+    setCompareMode((prev) => !prev);
   }, []);
 
   return {
@@ -377,6 +455,8 @@ export function useSimulation() {
     isSimulating,
     isPaused,
     showRecoveryModal,
+    isIsolationEnabled,
+    compareMode,
     currentTelemetry,
     telemetryHistory,
     peakG,
@@ -390,5 +470,7 @@ export function useSimulation() {
     pauseSimulation,
     acknowledgeAlert,
     setShowRecoveryModal,
+    toggleIsolation,
+    toggleCompareMode,
   };
 }

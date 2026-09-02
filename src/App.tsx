@@ -12,7 +12,7 @@ import { EventTimeline } from './components/EventTimeline';
 import { ArchitecturePanel } from './components/ArchitecturePanel';
 import { AlertPanel } from './components/AlertPanel';
 import { RecoveryModal } from './components/RecoveryModal';
-import { ShieldCheck, ChevronDown, Layers } from 'lucide-react';
+import { ShieldCheck, ChevronDown, Layers, AlertTriangle } from 'lucide-react';
 
 export function App() {
   const {
@@ -23,6 +23,8 @@ export function App() {
     isSimulating,
     isPaused,
     showRecoveryModal,
+    isIsolationEnabled,
+    compareMode,
     currentTelemetry,
     telemetryHistory,
     peakG,
@@ -35,10 +37,12 @@ export function App() {
     resetSystem,
     pauseSimulation,
     acknowledgeAlert,
+    toggleIsolation,
+    toggleCompareMode,
   } = useSimulation();
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-100 font-sans flex flex-col justify-between selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#060a14] text-slate-100 font-sans flex flex-col justify-between selection:bg-cyan-500/30">
       {/* Floating Emergency Alert Banner */}
       <AlertPanel alert={alert} onDismiss={acknowledgeAlert} />
 
@@ -51,80 +55,74 @@ export function App() {
         scenario={activeScenario}
       />
 
-      {/* Header */}
+      {/* Header (Matching Image 2 Top Header) */}
       <Header
         systemStatus={systemStatus}
         phase={phase}
         isSimulating={isSimulating}
+        compareMode={compareMode}
+        onToggleCompareMode={toggleCompareMode}
       />
 
-      {/* Primary Single-Screen Viewport Container */}
-      <main className="flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-4 lg:p-6 space-y-4">
+      {/* Primary Protected Pod Viewport Container (Matching Image 2 Layout) */}
+      <main className="flex-1 w-full max-w-[1750px] mx-auto p-3 sm:p-4 lg:p-5 space-y-4">
         
-        {/* BIG SYSTEM STATUS BANNER */}
-        <div className="w-full bg-console-card/90 border border-console-border px-4 py-2.5 rounded-xl flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-3">
-            <span className={`w-3 h-3 rounded-full ${
-              phase === 'DETECT' || phase === 'STABILIZE' ? 'bg-amber-400 animate-ping' : phase === 'SECURE' ? 'bg-emerald-400' : 'bg-emerald-400 animate-pulse'
-            }`} />
-            <h2 className="font-mono text-sm lg:text-lg font-extrabold uppercase tracking-wider text-slate-100">
-              STATUS: <span className={
-                phase === 'DETECT' || phase === 'STABILIZE' ? 'text-amber-400' : phase === 'SECURE' ? 'text-emerald-400 font-bold' : 'text-emerald-400'
-              }>{systemStatus}</span>
-            </h2>
-          </div>
-          <span className="hidden sm:inline font-mono text-xs text-slate-400">
-            ESDS RETROFIT SAFETY LAYER
-          </span>
-        </div>
-
-        {/* ROW 1: Hero Digital Twin (Left 7 Cols / ~60%) | Earthquake Simulator Controls (Right 5 Cols) */}
+        {/* ROW 1: Hero Protected Pod (~65% Width) | Right Controls & System Response (~35% Width) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          {/* Digital Twin Hero Visual (7 Cols) */}
-          <div className="lg:col-span-7 flex flex-col">
+          {/* Protected Pod Digital Twin Hero (7.5 Cols / ~65% Width - Matching Image 2) */}
+          <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
             <DialysisDigitalTwin
               phase={phase}
               telemetry={currentTelemetry}
               dampers={dampers}
               isSimulating={isSimulating}
               peakG={peakG}
+              isIsolationEnabled={isIsolationEnabled}
+              compareMode={compareMode}
             />
           </div>
 
-          {/* Simulator Controls (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col">
+          {/* Simulator Console & System Response Vertical Panel (4.5 Cols / ~35% Width - Matching Image 2) */}
+          <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
             <EarthquakeSimulator
               activeScenario={activeScenario}
               intensity={intensity}
               isSimulating={isSimulating}
               isPaused={isPaused}
+              isIsolationEnabled={isIsolationEnabled}
+              compareMode={compareMode}
+              phase={phase}
               onStartSimulation={startSimulation}
               onSetIntensity={setIntensity}
               onResetSystem={resetSystem}
               onPauseSimulation={pauseSimulation}
+              onToggleIsolation={toggleIsolation}
+              onToggleCompareMode={toggleCompareMode}
             />
           </div>
         </div>
 
-        {/* ROW 2: Sensor Status (4 Key Metrics) | Live Waveform Oscilloscope */}
+        {/* ROW 2: Bottom Section 3 Cards Grid (Sensor Readings | Motion Comparison | Live Vibration) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          <div className="lg:col-span-5 flex flex-col">
+          {/* Cards 1 & 2: Sensor Readings & Motion Comparison (8 Cols - Matching Image 2) */}
+          <div className="lg:col-span-8 flex flex-col">
             <SensorTelemetry telemetry={currentTelemetry} metrics={metrics} peakG={peakG} />
           </div>
-          <div className="lg:col-span-7 flex flex-col">
+          {/* Card 3: Live Vibration Waveform Oscilloscope (4 Cols - Matching Image 2) */}
+          <div className="lg:col-span-4 flex flex-col">
             <VibrationChart history={telemetryHistory} metrics={metrics} phase={phase} />
           </div>
         </div>
 
-        {/* ROW 3: Simplified 4-Step Safety Response Sequence */}
+        {/* ROW 3: Bottom Horizontal 5-Step Pipeline Bar (Matching Image 2) */}
         <SafetyStateMachine currentPhase={phase} isSimulating={isSimulating} />
 
-        {/* SINGLE COLLAPSED TECHNICAL DETAILS SECTION AT BOTTOM */}
+        {/* SINGLE COLLAPSED TECHNICAL DETAILS ACCORDION AT BOTTOM */}
         <details className="group w-full bg-console-card/60 border border-console-border rounded-xl p-4 transition-all">
           <summary className="flex items-center justify-between cursor-pointer font-mono font-bold text-xs lg:text-sm text-slate-300 uppercase select-none">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-cyan-400" />
-              <span>TECHNICAL DETAILS &amp; ARCHITECTURE MAPPING</span>
+              <span>TECHNICAL DETAILS &amp; HARDWARE ROADMAP</span>
             </div>
             <div className="flex items-center gap-1 text-slate-400 group-open:rotate-180 transition-transform">
               <ChevronDown className="w-4 h-4" />
@@ -132,7 +130,6 @@ export function App() {
           </summary>
 
           <div className="mt-4 space-y-4 pt-4 border-t border-console-border">
-            {/* Row: Decision Engine & False Positive Pipeline */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
               <div className="lg:col-span-6">
                 <DecisionEngine metrics={metrics} dampers={dampers} phase={phase} peakG={peakG} />
@@ -146,7 +143,6 @@ export function App() {
               </div>
             </div>
 
-            {/* Row: Event Timeline Audit Log & Architecture Panel */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
               <div className="lg:col-span-7">
                 <EventTimeline logs={eventLogs} />
@@ -159,15 +155,19 @@ export function App() {
         </details>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-[#05080e] border-t border-console-border px-4 py-2.5 text-center font-mono text-[11px] text-slate-500">
-        <div className="max-w-[1700px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      {/* Footer Disclaimer Bar (Matching Image 2 Footer) */}
+      <footer className="w-full bg-[#040711] border-t border-console-border px-4 py-2 text-center font-mono text-[11px] text-slate-500">
+        <div className="max-w-[1750px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span className="flex items-center gap-1.5 text-slate-400">
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-            ESDS — Earthquake-Resilient Dialysis Safety System &bull; Smart India Hackathon Digital Twin MVP
+            SOFTWARE DIGITAL TWIN &bull; CONCEPTUAL MVP
           </span>
-          <span className="text-amber-400/90 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-900/50">
-            SOFTWARE SIMULATION • NOT CONNECTED TO PHYSICAL MEDICAL EQUIPMENT
+          <span className="text-amber-400/90 font-semibold flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            THIS IS A SIMULATION. NOT CONNECTED TO REAL MEDICAL EQUIPMENT.
+          </span>
+          <span className="text-slate-400 font-bold">
+            ESDS PROTECTED POD MVP v1.0
           </span>
         </div>
       </footer>
