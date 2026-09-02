@@ -70,7 +70,7 @@ export function useSimulation() {
   const [eventLogs, setEventLogs] = useState<EventLogEntry[]>([]);
 
   const timeRef = useRef<number>(0);
-  const eventTimeoutRefs = useRef<NodeJS.Timeout[]>([]);
+  const eventTimeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
   const peakDynamicGRef = useRef<number>(0.03);
 
   const addLog = useCallback((step: SafetyPhaseStep, message: string, severity: EventLogEntry['severity']) => {
