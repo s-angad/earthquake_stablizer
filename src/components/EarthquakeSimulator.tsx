@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScenarioPreset, SafetyPhaseStep } from '../types/esds';
-import { Zap, RotateCcw, Sliders, Filter, ShieldAlert, ShieldCheck, Columns, CheckCircle2, Circle } from 'lucide-react';
+import { Zap, RotateCcw, Sliders, Filter, ShieldCheck, Columns, ShieldAlert, CheckCircle2, Circle } from 'lucide-react';
 
 interface SimulatorProps {
   activeScenario: ScenarioPreset;
@@ -42,29 +42,29 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
   const activeStepIdx = RESPONSE_STEPS.findIndex((s) => s.id === phase);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* CARD 1: EARTHQUAKE SIMULATOR (Matching Image 2 Right Top) */}
-      <div className="panel-glass rounded-xl p-4 border border-console-border shadow-xl space-y-3">
+    <div className="flex flex-col gap-3">
+      {/* CARD 1: EARTHQUAKE SIMULATOR */}
+      <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-sm space-y-3">
         {/* Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-console-border">
+        <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-cyan-400" />
-            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-100 tracking-wide uppercase">
+            <Zap className="w-4 h-4 text-cyan-600" />
+            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-800 tracking-wide uppercase">
               EARTHQUAKE SIMULATOR
             </h2>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/30 font-bold">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-300 font-bold">
             DEMO CONTROLS
           </span>
         </div>
 
         {/* ESDS ISOLATION ON / OFF TOGGLE ROW */}
-        <div className="bg-console-card/90 border border-console-border p-2.5 rounded-lg">
+        <div className="bg-slate-50 border border-[#E2E8F0] p-2 rounded-lg">
           <div className="flex items-center justify-between font-mono text-xs mb-1.5">
-            <span className="text-slate-300 font-bold flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-cyan-400" /> ESDS ISOLATION:
+            <span className="text-slate-700 font-bold flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-cyan-600" /> ESDS ISOLATION:
             </span>
-            <span className={`font-bold ${isIsolationEnabled ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className={`font-bold ${isIsolationEnabled ? 'text-emerald-600' : 'text-rose-600'}`}>
               {isIsolationEnabled ? 'ACTIVE (ON)' : 'DISABLED (OFF)'}
             </span>
           </div>
@@ -74,8 +74,8 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
               onClick={onToggleIsolation}
               className={`py-1.5 rounded font-bold transition-all flex items-center justify-center gap-1 ${
                 !isIsolationEnabled
-                  ? 'bg-rose-950 border border-rose-500 text-rose-300 glow-critical'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-rose-100 border border-rose-400 text-rose-800 shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
               }`}
             >
               <span>[ OFF ] UNPROTECTED</span>
@@ -85,8 +85,8 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
               onClick={onToggleIsolation}
               className={`py-1.5 rounded font-bold transition-all flex items-center justify-center gap-1 ${
                 isIsolationEnabled
-                  ? 'bg-emerald-950 border border-emerald-500 text-emerald-300 glow-safe'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-emerald-100 border border-emerald-400 text-emerald-800 shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800'
               }`}
             >
               <span>[ ON ] PROTECTED</span>
@@ -94,52 +94,52 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
           </div>
         </div>
 
-        {/* Preset Scenario Buttons (Normal 5% / Moderate 55% / Severe 88% - Matching Image 2) */}
+        {/* Preset Scenario Buttons */}
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => onStartSimulation('NORMAL')}
             className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold text-center transition-all ${
               activeScenario === 'NORMAL' && !isSimulating
-                ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300 ring-1 ring-emerald-500/50'
-                : 'bg-console-card/80 border-console-border text-slate-300 hover:border-slate-600'
+                ? 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-1 ring-emerald-400'
+                : 'bg-white border-[#E2E8F0] text-slate-700 hover:border-slate-400'
             }`}
           >
             <div>NORMAL</div>
-            <div className="text-[10px] text-slate-400 font-normal">5%</div>
+            <div className="text-[10px] text-emerald-600 font-normal">5%</div>
           </button>
 
           <button
             onClick={() => onStartSimulation('MODERATE')}
             className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold text-center transition-all ${
               activeScenario === 'MODERATE'
-                ? 'bg-amber-950/90 border-amber-500/60 text-amber-300 ring-1 ring-amber-500/50'
-                : 'bg-console-card/80 border-console-border text-slate-300 hover:border-amber-500/40'
+                ? 'bg-amber-50 border-amber-400 text-amber-800 ring-1 ring-amber-400'
+                : 'bg-white border-[#E2E8F0] text-slate-700 hover:border-amber-400'
             }`}
           >
             <div>MODERATE</div>
-            <div className="text-[10px] text-amber-400 font-normal">55%</div>
+            <div className="text-[10px] text-amber-600 font-normal">55%</div>
           </button>
 
           <button
             onClick={() => onStartSimulation('SEVERE')}
             className={`py-2 px-2 rounded-lg border font-mono text-xs font-bold text-center transition-all ${
               activeScenario === 'SEVERE'
-                ? 'bg-rose-950/90 border-rose-500/60 text-rose-300 ring-1 ring-rose-500/50'
-                : 'bg-console-card/80 border-console-border text-slate-300 hover:border-rose-500/40'
+                ? 'bg-rose-50 border-rose-400 text-rose-800 ring-1 ring-rose-400'
+                : 'bg-white border-[#E2E8F0] text-slate-700 hover:border-rose-400'
             }`}
           >
             <div>SEVERE</div>
-            <div className="text-[10px] text-rose-400 font-normal">88%</div>
+            <div className="text-[10px] text-rose-600 font-normal">88%</div>
           </button>
         </div>
 
         {/* Manual Intensity Slider */}
-        <div className="bg-console-card/80 border border-console-border p-2.5 rounded-lg">
+        <div className="bg-slate-50 border border-[#E2E8F0] p-2 rounded-lg">
           <div className="flex items-center justify-between text-xs font-mono mb-1">
-            <span className="text-slate-300 flex items-center gap-1.5 font-semibold">
-              <Sliders className="w-3.5 h-3.5 text-cyan-400" /> INTENSITY
+            <span className="text-slate-700 flex items-center gap-1.5 font-semibold">
+              <Sliders className="w-3.5 h-3.5 text-cyan-600" /> INTENSITY
             </span>
-            <span className="text-amber-400 font-bold text-xs font-mono">{intensity}%</span>
+            <span className="text-amber-600 font-bold text-xs font-mono">{intensity}%</span>
           </div>
 
           <input
@@ -148,21 +148,21 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
             max="100"
             value={intensity}
             onChange={(e) => onSetIntensity(parseInt(e.target.value, 10))}
-            className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-amber-400 border border-slate-800"
+            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500 border border-slate-300"
           />
         </div>
 
-        {/* Primary Action Button: ⚡ SIMULATE EARTHQUAKE (Matching Image 2 Bright Gold Glow CTA) */}
+        {/* Primary Action Button: Amber CTA */}
         <button
           onClick={() => onStartSimulation(intensity > 70 ? 'SEVERE' : intensity > 20 ? 'MODERATE' : 'NORMAL', intensity)}
           disabled={isSimulating}
-          className={`w-full py-3 px-4 rounded-xl font-mono font-extrabold text-xs lg:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xl ${
+          className={`w-full py-2.5 px-4 rounded-xl font-mono font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm ${
             isSimulating
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-              : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 border border-amber-300 glow-warning'
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+              : 'bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-300'
           }`}
         >
-          <Zap className="w-5 h-5 fill-current animate-pulse" />
+          <Zap className="w-4 h-4 fill-current animate-pulse text-slate-950" />
           <span>⚡ SIMULATE EARTHQUAKE</span>
         </button>
 
@@ -170,76 +170,76 @@ export const EarthquakeSimulator: React.FC<SimulatorProps> = ({
         <div className="grid grid-cols-3 gap-1.5 text-[11px] font-mono">
           <button
             onClick={onResetSystem}
-            className="py-1.5 px-2 rounded-lg bg-console-card border border-console-border text-slate-300 hover:border-slate-600 font-semibold flex items-center justify-center gap-1"
+            className="py-1.5 px-2 rounded-lg bg-white border border-[#E2E8F0] text-slate-700 hover:border-slate-400 font-semibold flex items-center justify-center gap-1 shadow-sm"
           >
-            <RotateCcw className="w-3 h-3 text-cyan-400" />
+            <RotateCcw className="w-3 h-3 text-cyan-600" />
             <span>RESET</span>
           </button>
 
           <button
             onClick={() => onStartSimulation('PUMP_VIBRATION')}
             disabled={isSimulating}
-            className="py-1.5 px-2 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900 font-semibold flex items-center justify-center gap-1 truncate"
+            className="py-1.5 px-2 rounded-lg bg-cyan-50 border border-cyan-300 text-cyan-800 hover:bg-cyan-100 font-semibold flex items-center justify-center gap-1 truncate shadow-sm"
           >
-            <Filter className="w-3 h-3 text-cyan-400" />
+            <Filter className="w-3 h-3 text-cyan-600" />
             <span>VIBE TEST</span>
           </button>
 
           <button
             onClick={onToggleCompareMode}
-            className={`py-1.5 px-2 rounded-lg border font-semibold flex items-center justify-center gap-1 truncate ${
-              compareMode ? 'bg-amber-950 border-amber-400 text-amber-300' : 'bg-console-card border-console-border text-slate-300 hover:border-amber-400'
+            className={`py-1.5 px-2 rounded-lg border font-semibold flex items-center justify-center gap-1 truncate shadow-sm ${
+              compareMode ? 'bg-amber-100 border-amber-400 text-amber-900' : 'bg-white border-[#E2E8F0] text-slate-700 hover:border-amber-400'
             }`}
           >
-            <Columns className="w-3 h-3 text-amber-400" />
+            <Columns className="w-3 h-3 text-amber-600" />
             <span>COMPARE</span>
           </button>
         </div>
       </div>
 
-      {/* CARD 2: SYSTEM RESPONSE VERTICAL LIST 1-5 (Matching Image 2 Right Bottom) */}
-      <div className="panel-glass rounded-xl p-4 border border-console-border shadow-xl space-y-3 flex-1 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2 border-b border-console-border">
+      {/* CARD 2: SYSTEM RESPONSE VERTICAL LIST */}
+      <div className="bg-white rounded-xl p-3.5 border border-[#E2E8F0] shadow-sm space-y-2.5">
+        <div className="flex items-center justify-between pb-1.5 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-cyan-400" />
-            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-100 tracking-wide uppercase">
+            <ShieldAlert className="w-4 h-4 text-cyan-600" />
+            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-800 tracking-wide uppercase">
               SYSTEM RESPONSE
             </h2>
           </div>
         </div>
 
-        {/* 5 Vertical Numbered Sequence Steps (Matching Image 2) */}
-        <div className="space-y-2 flex-1 flex flex-col justify-between font-mono text-xs">
+        {/* 5 Vertical Numbered Sequence Steps */}
+        <div className="space-y-1.5 font-mono text-xs">
           {RESPONSE_STEPS.map((step, idx) => {
             const isCurrent = step.id === phase;
             const isPassed = idx < activeStepIdx || phase === 'RECOVERY';
 
-            let boxStyle = 'bg-console-card/60 border-console-border text-slate-400';
-            let numStyle = 'text-slate-500 border-slate-700 bg-slate-900';
-            let IconComponent = <Circle className="w-4 h-4 text-slate-600" />;
+            let boxStyle = 'bg-slate-50 border-[#E2E8F0] text-slate-500';
+            let numStyle = 'text-slate-600 border-slate-300 bg-white';
+            let IconComponent = <Circle className="w-3.5 h-3.5 text-slate-400" />;
 
             if (isCurrent) {
-              boxStyle = 'bg-amber-950/80 border-amber-400 text-amber-200 ring-1 ring-amber-400 glow-warning';
+              boxStyle = 'bg-amber-50 border-amber-300 text-amber-900 ring-1 ring-amber-300 shadow-sm';
               numStyle = 'text-slate-950 font-bold bg-amber-400 border-amber-300';
-              IconComponent = <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />;
+              IconComponent = <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />;
             } else if (isPassed) {
-              boxStyle = 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300';
-              numStyle = 'text-emerald-300 bg-emerald-950 border-emerald-700';
-              IconComponent = <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+              boxStyle = 'bg-emerald-50/70 border-emerald-300 text-emerald-800';
+              numStyle = 'text-emerald-700 bg-emerald-100 border-emerald-400';
+              IconComponent = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />;
             }
 
             return (
               <div
                 key={step.id}
-                className={`p-2.5 rounded-lg border flex items-center justify-between transition-all duration-300 ${boxStyle}`}
+                className={`p-2 px-2.5 rounded-lg border flex items-center justify-between transition-all duration-300 ${boxStyle}`}
               >
-                <div className="flex items-center gap-3">
-                  <span className={`w-5 h-5 rounded-full border text-[10px] flex items-center justify-center font-bold ${numStyle}`}>
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-4 h-4 rounded-full border text-[9px] flex items-center justify-center font-bold ${numStyle}`}>
                     {step.num}
                   </span>
                   <div>
-                    <div className="font-bold uppercase tracking-wider text-xs">{step.title}</div>
-                    <div className="text-[10px] text-slate-400">{step.desc}</div>
+                    <div className="font-bold uppercase tracking-wider text-[11px] text-slate-800">{step.title}</div>
+                    <div className="text-[9px] text-slate-500">{step.desc}</div>
                   </div>
                 </div>
                 <div>{IconComponent}</div>

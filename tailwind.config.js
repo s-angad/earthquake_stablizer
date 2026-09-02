@@ -8,27 +8,27 @@ export default {
     extend: {
       colors: {
         console: {
-          bg: "#080c14",
-          surface: "#0f172a",
-          panel: "#131c2e",
-          card: "#182238",
-          border: "#1e2d4a",
-          highlight: "#263759",
+          bg: "#F4F7FA",
+          surface: "#FFFFFF",
+          panel: "#FFFFFF",
+          card: "#FAFAFC",
+          border: "#E2E8F0",
+          highlight: "#F1F5F9",
         },
         safe: {
-          DEFAULT: "#10b981",
-          glow: "rgba(16, 185, 129, 0.15)",
+          DEFAULT: "#10B981",
+          glow: "rgba(16, 185, 129, 0.12)",
         },
         warning: {
-          DEFAULT: "#f59e0b",
+          DEFAULT: "#F59E0B",
           glow: "rgba(245, 158, 11, 0.15)",
         },
         critical: {
-          DEFAULT: "#ef4444",
-          glow: "rgba(239, 68, 68, 0.2)",
+          DEFAULT: "#EF4444",
+          glow: "rgba(239, 68, 68, 0.15)",
         },
         telemetry: {
-          DEFAULT: "#06b6d4",
+          DEFAULT: "#06B6D4",
           glow: "rgba(6, 182, 212, 0.15)",
         }
       },

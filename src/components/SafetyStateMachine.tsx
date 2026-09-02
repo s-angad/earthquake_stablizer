@@ -1,69 +1,64 @@
 import React from 'react';
 import { SafetyPhaseStep } from '../types/esds';
-import { Eye, Activity, ShieldAlert, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Activity, Lock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-interface StateMachineProps {
+interface SafetyStateMachineProps {
   currentPhase: SafetyPhaseStep;
   isSimulating: boolean;
 }
 
-interface StepItem {
-  id: SafetyPhaseStep;
-  num: string;
-  label: string;
-  sub: string;
-  icon: React.ReactNode;
-}
-
-const STEPS: StepItem[] = [
-  { id: 'MONITOR', num: '01', label: 'MONITOR', sub: 'Scanning environment', icon: <Eye className="w-4 h-4" /> },
-  { id: 'DETECT', num: '02', label: 'DETECT', sub: 'Seismic activity found', icon: <Activity className="w-4 h-4" /> },
-  { id: 'ISOLATE', num: '03', label: 'ISOLATE', sub: 'Isolation systems active', icon: <ShieldAlert className="w-4 h-4" /> },
-  { id: 'PROTECT', num: '04', label: 'PROTECT', sub: 'Patient & equipment safe', icon: <ShieldCheck className="w-4 h-4" /> },
-  { id: 'SECURE', num: '05', label: 'SECURE', sub: 'System in secured state', icon: <Lock className="w-4 h-4" /> },
+const PHASES: { id: SafetyPhaseStep; label: string; desc: string }[] = [
+  { id: 'MONITOR', label: '1. MONITOR', desc: 'Continuous baseline monitoring' },
+  { id: 'DETECT', label: '2. DETECT', desc: 'Threshold trigger validation' },
+  { id: 'ISOLATE', label: '3. ISOLATE', desc: 'Active isolation engagement' },
+  { id: 'PROTECT', label: '4. PROTECT', desc: 'Vibration damping & lock' },
+  { id: 'SECURE', label: '5. SECURE', desc: 'Verified secure state' },
 ];
 
-export const SafetyStateMachine: React.FC<StateMachineProps> = ({ currentPhase }) => {
-  const activeIndex = STEPS.findIndex((s) => s.id === currentPhase);
+export const SafetyStateMachine: React.FC<SafetyStateMachineProps> = ({ currentPhase }) => {
+  const activeIdx = PHASES.findIndex((p) => p.id === currentPhase);
 
   return (
-    <div className="panel-glass rounded-xl p-3 border border-console-border w-full shadow-lg">
-      {/* 5-Step Horizontal Pipeline Flow (Matching Image 2 Bottom Pipeline) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 font-mono text-xs">
-        {STEPS.map((step, idx) => {
-          const isActive = step.id === currentPhase;
-          const isPassed = idx < activeIndex || currentPhase === 'RECOVERY';
+    <div className="bg-white border border-[#D9E1EA] rounded-xl p-4 shadow-md font-mono text-xs space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-[#D9E1EA]">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-cyan-600" />
+          <h2 className="font-bold text-slate-800 uppercase tracking-wider">
+            AUTOMATED SAFETY PIPELINE &bull; STATE MACHINE
+          </h2>
+        </div>
+        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">
+          SUB-20ms DETERMINISTIC PIPELINE
+        </span>
+      </div>
 
-          let stepStyle = 'bg-console-card/60 border-console-border text-slate-400';
-          let iconBg = 'bg-slate-900 text-slate-500 border-slate-700';
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+        {PHASES.map((phase, idx) => {
+          const isCurrent = phase.id === currentPhase;
+          const isPassed = idx < activeIdx || currentPhase === 'RECOVERY';
 
-          if (isActive) {
-            stepStyle =
-              step.id === 'ISOLATE' || step.id === 'PROTECT' || step.id === 'SECURE'
-                ? 'bg-emerald-950/90 border-emerald-400 text-emerald-200 glow-safe ring-1 ring-emerald-400'
-                : 'bg-amber-950/90 border-amber-400 text-amber-200 glow-warning ring-1 ring-amber-400';
-            iconBg = 'bg-amber-400 text-slate-950 font-bold border-amber-300';
+          let stateStyle = 'bg-slate-50 border-[#D9E1EA] text-slate-500';
+          let indicator = <div className="w-2 h-2 rounded-full bg-slate-300" />;
+
+          if (isCurrent) {
+            stateStyle = 'bg-amber-50 border-amber-400 text-amber-900 ring-1 ring-amber-400 shadow-sm';
+            indicator = <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />;
           } else if (isPassed) {
-            stepStyle = 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300';
-            iconBg = 'bg-emerald-950 text-emerald-300 border-emerald-700';
+            stateStyle = 'bg-emerald-50 border-emerald-300 text-emerald-800';
+            indicator = <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
           }
 
           return (
-            <React.Fragment key={step.id}>
-              <div className={`flex-1 w-full p-2.5 rounded-lg border flex items-center gap-2.5 transition-all duration-300 ${stepStyle}`}>
-                <div className={`w-7 h-7 rounded-full border flex items-center justify-center font-bold flex-shrink-0 ${iconBg}`}>
-                  {step.icon}
-                </div>
-                <div className="truncate">
-                  <div className="font-bold text-xs uppercase tracking-wider">{step.label}</div>
-                  <div className="text-[10px] text-slate-400 truncate">{step.sub}</div>
-                </div>
+            <div
+              key={phase.id}
+              className={`p-2.5 rounded-lg border flex flex-col justify-between transition-all duration-300 ${stateStyle}`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-slate-800">{phase.label}</span>
+                {indicator}
               </div>
-
-              {idx < STEPS.length - 1 && (
-                <ArrowRight className="hidden sm:block w-4 h-4 text-slate-600 flex-shrink-0" />
-              )}
-            </React.Fragment>
+              <span className="text-[9px] text-slate-500 leading-tight">{phase.desc}</span>
+            </div>
           );
         })}
       </div>

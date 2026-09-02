@@ -156,8 +156,8 @@ export function useSimulation() {
 
       const vibeIntensity = Math.min(100, Math.round(dynamicAcc * 140));
 
-      // Floor Motion vs Pod Motion Calculation
-      const rawFloorMotion = activeScenario === 'NORMAL' ? 2 : Math.min(100, Math.round((intensity / 100) * 78));
+      // Floor Motion vs Pod Motion Calculation (0% when idle / NORMAL, active when SIMULATE EARTHQUAKE clicked)
+      const rawFloorMotion = (!isSimulating || activeScenario === 'NORMAL') ? 0 : Math.min(100, Math.round((intensity / 100) * 85));
       const calculatedPodMotion = Math.round(rawFloorMotion * (1 - currentIsolationEff / 100));
 
       if (dynamicAcc > peakDynamicGRef.current) {

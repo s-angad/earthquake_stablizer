@@ -28,8 +28,8 @@ export const VibrationChart: React.FC<VibrationChartProps> = ({ history, metrics
 
     ctx.clearRect(0, 0, width, height);
 
-    // Background Grid lines (Matching Image 2 Oscilloscope)
-    ctx.strokeStyle = 'rgba(30, 45, 74, 0.4)';
+    // Background Grid lines matching reference oscilloscope
+    ctx.strokeStyle = 'rgba(217, 225, 234, 0.8)';
     ctx.lineWidth = 1;
     const gridRows = 4;
     const gridCols = 8;
@@ -51,11 +51,11 @@ export const VibrationChart: React.FC<VibrationChartProps> = ({ history, metrics
     if (history.length < 2) return;
 
     const zeroY = height / 2;
-    const scaleY = (height - 20) / 1.2;
+    const scaleY = (height - 16) / 1.2;
 
     // Threshold Line (+0.25g)
     const threshY = zeroY - metrics.detectionThreshold * scaleY;
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(0, threshY);
@@ -65,8 +65,8 @@ export const VibrationChart: React.FC<VibrationChartProps> = ({ history, metrics
 
     const stepX = width / (history.length - 1);
 
-    // Dynamic Waveform Line (Yellow/Amber - Matching Image 2 Oscilloscope)
-    ctx.strokeStyle = '#f59e0b';
+    // Dynamic Waveform Line (Amber/Orange - Matching Reference Oscilloscope)
+    ctx.strokeStyle = '#d97706';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
 
@@ -85,7 +85,7 @@ export const VibrationChart: React.FC<VibrationChartProps> = ({ history, metrics
     const lastX = (history.length - 1) * stepX;
     const lastY = zeroY - lastPoint.dynamicAcceleration * scaleY;
 
-    ctx.fillStyle = lastPoint.dynamicAcceleration > metrics.detectionThreshold ? '#ef4444' : '#f59e0b';
+    ctx.fillStyle = lastPoint.dynamicAcceleration > metrics.detectionThreshold ? '#dc2626' : '#d97706';
     ctx.beginPath();
     ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
     ctx.fill();
@@ -93,41 +93,41 @@ export const VibrationChart: React.FC<VibrationChartProps> = ({ history, metrics
   }, [history, metrics, phase]);
 
   return (
-    <div className="panel-glass rounded-xl p-4 border border-console-border flex flex-col justify-between h-full shadow-lg">
-      {/* Header (Matching Image 2) */}
-      <div className="flex items-center justify-between pb-2 border-b border-console-border mb-2">
+    <div className="bg-white rounded-xl p-3 border border-[#D9E1EA] flex flex-col justify-between shadow-sm space-y-1.5 w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#D9E1EA]">
         <div className="flex items-center gap-2">
-          <Waves className="w-4 h-4 text-cyan-400" />
-          <div>
-            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-100 tracking-wide uppercase">
+          <Waves className="w-4 h-4 text-cyan-600" />
+          <div className="flex items-center gap-2">
+            <h2 className="font-mono font-bold text-xs lg:text-sm text-slate-800 tracking-wide uppercase">
               LIVE VIBRATION WAVEFORM
             </h2>
-            <span className="text-[10px] text-slate-400 font-normal">Real-time acceleration data</span>
+            <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">&bull; Real-time acceleration data</span>
           </div>
         </div>
-        <span className="text-[10px] font-mono text-cyan-400 font-bold">
+        <span className="text-[10px] font-mono text-cyan-700 font-bold">
           100 Hz STREAM
         </span>
       </div>
 
-      {/* Oscilloscope Canvas with Y-Axis Ticks (Matching Image 2) */}
-      <div className="relative w-full h-[120px] lg:h-[130px] bg-console-card/90 border border-console-border rounded-lg overflow-hidden flex">
+      {/* Oscilloscope Canvas with Y-Axis Ticks - Stretched Full Width */}
+      <div className="relative w-full h-[85px] lg:h-[95px] bg-slate-50 border border-[#D9E1EA] rounded-lg overflow-hidden flex">
         {/* Y Axis Ticks */}
-        <div className="flex flex-col justify-between py-1 px-1.5 font-mono text-[9px] text-slate-500 border-r border-console-border/60 bg-slate-950/60">
+        <div className="flex flex-col justify-between py-1 px-1.5 font-mono text-[9px] text-slate-500 border-r border-[#D9E1EA] bg-white">
           <span>0.5g</span>
           <span>0</span>
           <span>-0.5g</span>
         </div>
 
         {/* Canvas */}
-        <div className="relative flex-1 h-full">
+        <div className="relative flex-1 h-full bg-[#FAFAFA]">
           <canvas ref={canvasRef} className="w-full h-full block" />
         </div>
       </div>
 
-      <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 pt-1">
-        <span>TIME &rarr;</span>
-        <span className="text-amber-400">THRESHOLD: 0.25g</span>
+      <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 pt-0.5">
+        <span className="font-bold">TIME &rarr;</span>
+        <span className="text-amber-600 font-bold">THRESHOLD: 0.25g</span>
       </div>
     </div>
   );

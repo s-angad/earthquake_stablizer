@@ -12,7 +12,7 @@ import { EventTimeline } from './components/EventTimeline';
 import { ArchitecturePanel } from './components/ArchitecturePanel';
 import { AlertPanel } from './components/AlertPanel';
 import { RecoveryModal } from './components/RecoveryModal';
-import { ShieldCheck, ChevronDown, Layers, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, ChevronDown, Layers, AlertTriangle, Activity, HeartPulse } from 'lucide-react';
 
 export function App() {
   const {
@@ -42,7 +42,7 @@ export function App() {
   } = useSimulation();
 
   return (
-    <div className="min-h-screen bg-[#060a14] text-slate-100 font-sans flex flex-col justify-between selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#F4F7FA] text-[#162033] font-sans flex flex-col justify-start selection:bg-cyan-500/20">
       {/* Floating Emergency Alert Banner */}
       <AlertPanel alert={alert} onDismiss={acknowledgeAlert} />
 
@@ -55,7 +55,7 @@ export function App() {
         scenario={activeScenario}
       />
 
-      {/* Header (Matching Image 2 Top Header) */}
+      {/* Header */}
       <Header
         systemStatus={systemStatus}
         phase={phase}
@@ -64,13 +64,14 @@ export function App() {
         onToggleCompareMode={toggleCompareMode}
       />
 
-      {/* Primary Protected Pod Viewport Container (Matching Image 2 Layout) */}
-      <main className="flex-1 w-full max-w-[1750px] mx-auto p-3 sm:p-4 lg:p-5 space-y-4">
+      {/* Primary Dashboard Content (Live Vibration Waveform moved directly into the gap under the 3D Pod) */}
+      <main className="w-full max-w-[1750px] mx-auto p-3 sm:p-4 lg:p-5 space-y-4">
         
-        {/* ROW 1: Hero Protected Pod (~65% Width) | Right Controls & System Response (~35% Width) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          {/* Protected Pod Digital Twin Hero (7.5 Cols / ~65% Width - Matching Image 2) */}
-          <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+        {/* MAIN DASHBOARD 2-COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* LEFT COLUMN (7.5 Cols / ~65% Width): 3D Hero + Live Vibration Waveform (Filling the gap) + Sensor Telemetry & Motion Comparison */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-3">
+            {/* Protected Pod Digital Twin Hero */}
             <DialysisDigitalTwin
               phase={phase}
               telemetry={currentTelemetry}
@@ -80,10 +81,17 @@ export function App() {
               isIsolationEnabled={isIsolationEnabled}
               compareMode={compareMode}
             />
+
+            {/* Live Vibration Waveform Oscilloscope (Moved directly into the gap under the 3D pod) */}
+            <VibrationChart history={telemetryHistory} metrics={metrics} phase={phase} />
+
+            {/* Sensor Telemetry & Motion Comparison Cards */}
+            <SensorTelemetry telemetry={currentTelemetry} metrics={metrics} peakG={peakG} />
           </div>
 
-          {/* Simulator Console & System Response Vertical Panel (4.5 Cols / ~35% Width - Matching Image 2) */}
-          <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+          {/* RIGHT COLUMN (4.5 Cols / ~35% Width): Earthquake Controls + System Response Vertical List */}
+          <div className="lg:col-span-5 xl:col-span-4">
+            {/* Simulator Console & System Response Vertical Panel */}
             <EarthquakeSimulator
               activeScenario={activeScenario}
               intensity={intensity}
@@ -102,35 +110,23 @@ export function App() {
           </div>
         </div>
 
-        {/* ROW 2: Bottom Section 3 Cards Grid (Sensor Readings | Motion Comparison | Live Vibration) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          {/* Cards 1 & 2: Sensor Readings & Motion Comparison (8 Cols - Matching Image 2) */}
-          <div className="lg:col-span-8 flex flex-col">
-            <SensorTelemetry telemetry={currentTelemetry} metrics={metrics} peakG={peakG} />
-          </div>
-          {/* Card 3: Live Vibration Waveform Oscilloscope (4 Cols - Matching Image 2) */}
-          <div className="lg:col-span-4 flex flex-col">
-            <VibrationChart history={telemetryHistory} metrics={metrics} phase={phase} />
-          </div>
-        </div>
-
-        {/* ROW 3: Bottom Horizontal 5-Step Pipeline Bar (Matching Image 2) */}
+        {/* ROW 2: Bottom Horizontal 5-Step Pipeline Bar */}
         <SafetyStateMachine currentPhase={phase} isSimulating={isSimulating} />
 
         {/* SINGLE COLLAPSED TECHNICAL DETAILS ACCORDION AT BOTTOM */}
-        <details className="group w-full bg-console-card/60 border border-console-border rounded-xl p-4 transition-all">
-          <summary className="flex items-center justify-between cursor-pointer font-mono font-bold text-xs lg:text-sm text-slate-300 uppercase select-none">
+        <details className="group w-full bg-white border border-[#E2E8F0] shadow-sm rounded-xl p-4 transition-all">
+          <summary className="flex items-center justify-between cursor-pointer font-mono font-bold text-xs lg:text-sm text-slate-700 uppercase select-none">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
+              <Layers className="w-4 h-4 text-cyan-600" />
               <span>TECHNICAL DETAILS &amp; HARDWARE ROADMAP</span>
             </div>
-            <div className="flex items-center gap-1 text-slate-400 group-open:rotate-180 transition-transform">
+            <div className="flex items-center gap-1 text-slate-500 group-open:rotate-180 transition-transform">
               <ChevronDown className="w-4 h-4" />
             </div>
           </summary>
 
-          <div className="mt-4 space-y-4 pt-4 border-t border-console-border">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div className="mt-4 space-y-4 pt-4 border-t border-[#E2E8F0]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
               <div className="lg:col-span-6">
                 <DecisionEngine metrics={metrics} dampers={dampers} phase={phase} peakG={peakG} />
               </div>
@@ -155,18 +151,18 @@ export function App() {
         </details>
       </main>
 
-      {/* Footer Disclaimer Bar (Matching Image 2 Footer) */}
-      <footer className="w-full bg-[#040711] border-t border-console-border px-4 py-2 text-center font-mono text-[11px] text-slate-500">
+      {/* Footer Disclaimer Bar */}
+      <footer className="w-full bg-white border-t border-[#E2E8F0] px-4 py-2 text-center font-mono text-[11px] text-slate-500 mt-4 shadow-sm">
         <div className="max-w-[1750px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="flex items-center gap-1.5 text-slate-600 font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-cyan-600" />
             SOFTWARE DIGITAL TWIN &bull; CONCEPTUAL MVP
           </span>
-          <span className="text-amber-400/90 font-semibold flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          <span className="text-amber-600 font-semibold flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
             THIS IS A SIMULATION. NOT CONNECTED TO REAL MEDICAL EQUIPMENT.
           </span>
-          <span className="text-slate-400 font-bold">
+          <span className="text-slate-700 font-bold">
             ESDS PROTECTED POD MVP v1.0
           </span>
         </div>
