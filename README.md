@@ -1,40 +1,77 @@
 # ESDS — Earthquake-Resilient Dialysis Safety System
-> **An Earthquake-Resilient Patient and Dialysis Equipment Protection System**  
+> **An Engineering Concept and Software MVP for an Earthquake-Resilient Patient & Dialysis Equipment Protection Platform**  
 > *Smart India Hackathon (SIH) — Technical & Innovation Project Report*
+
+---
+
+> ### ⚠️ OFFICIAL DISCLAIMER & COMPLIANCE NOTICE
+> **ESDS is currently a software MVP and conceptual engineering proposal.**  
+> The earthquake signals, sensor telemetry, motion calculations, isolation performance metrics, and 3D visual responses rendered in the digital twin are **computationally simulated parameters created for concept visualization**. The software is **not connected to, nor controlling, physical hardware or medical equipment**. ESDS is **not a certified medical device** and has not undergone physical shake-table validation or clinical testing. Any future physical deployment would require extensive structural, mechanical, electrical, biomedical, safety, regulatory, and clinical validation.
+
+---
+
+## 📌 Classification Legend
+
+To ensure complete transparency for SIH evaluators, technical judges, and mentors, all technical statements in this report are categorized using the following status markers:
+
+- 🟢 **`[IMPLEMENTED]`**: Features fully functional and verifiable in the current software source code repository.
+- 🟡 **`[SIMULATED]`**: Implemented digitally for demonstration, but calculated via software equations rather than physical hardware.
+- 🔵 **`[PROPOSED]`**: Engineering designs, candidate architectures, or hardware specifications planned for physical prototyping.
+- 🔴 **`[NOT VALIDATED]`**: Engineering targets, theoretical estimates, or safety claims requiring physical laboratory or clinical testing.
+
+---
+
+## 📊 Current Software MVP vs. Future Physical System
+
+| Feature / Capability | Current Software MVP 🟢 🟡 | Future Physical System 🔵 🔴 |
+| :--- | :--- | :--- |
+| **Project Status** | Software Concept Demonstration 🟢 | Physical Prototype & Hardware Rig 🔵 |
+| **Earthquake Input** | Computational Math Signal (Sum of Sines) 🟡 | Real Ground Acceleration / Shake Table 🔵 |
+| **Seismic Sensor Data** | Simulated Telemetry Loop (`useSimulation.ts`) 🟡 | Physical MEMS / Industrial IMU Sensors 🔵 |
+| **3D Digital Twin Engine** | Interactive Three.js / WebGL Rendering 🟢 | Hardware-Synchronized Telemetry Twin 🔵 |
+| **Pod & Equipment Motion** | Procedural 3D Mesh Kinematics 🟢 | Physical Mechanical Isolation Platform 🔵 |
+| **Seismic Isolation** | Illustrative $85\%$ Software Attenuation Factor 🟡 | Physical Dampers & Isolators 🔴 |
+| **Isolation Actuation** | Animated Isolator Pistons ($D1$–$D4$) 🟢 | Active/Passive Dampers or Servos 🔵 |
+| **Signal Detection** | TypeScript Logic & Thresholding 🟢 | Embedded Real-Time MCU Firmware (ESP32/STM32) 🔵 |
+| **Vibration Waveform** | HTML5 Canvas $100 \text{ Hz}$ Oscilloscope 🟢 | Real Sensor Telemetry Stream 🔵 |
+| **Patient & Console** | 3D Procedural Mesh Representations 🟢 | Physical Dialysis Bed & Hemodialysis Console 🔵 |
+| **Performance Validation** | Software UI Verification 🟢 | Shake-Table & Clinical Lab Validation 🔴 |
 
 ---
 
 ## 📋 Executive Summary
 
-The **Earthquake-Resilient Dialysis Safety System (ESDS)** is an integrated biomedical and mechanical safety platform engineered to protect dialysis patients and critical hemodialysis machinery during seismic events. 
+The **Earthquake-Resilient Dialysis Safety System (ESDS)** is an engineering concept and software demonstration designed to explore methods for protecting hemodialysis patients and critical medical consoles during seismic events.
 
-In conventional clinical environments, hemodialysis machines and patient treatment chairs/beds rest directly on hospital floors. During moderate-to-severe earthquakes, ground acceleration transmits directly to the equipment and patient. Because hemodialysis requires continuous extracorporeal blood circulation via arterial and venous lines connected to a vascular access site (AV fistula, graft, or central venous catheter), sudden displacement of either the patient or the dialysis console introduces severe mechanical risks.
+During an earthquake, unmitigated floor acceleration travels directly into hospital furniture and equipment. For hemodialysis patients—who remain connected to an extracorporeal blood circuit via vascular access (AV fistula, graft, or central catheter) for 3 to 4 hours per session—sudden displacement of either the patient chair or the dialysis console introduces severe mechanical risks.
 
-ESDS introduces an **active/passive seismic isolation layer** between the building structure and the dialysis environment. By combining real-time MEMS accelerometer telemetry, deterministic threshold detection, dynamic damping actuation, and a 3D WebGL Digital Twin control system, ESDS attenuates transmitted seismic energy by **over 85%**, maintaining a stabilized **Patient Safety Zone**.
+ESDS proposes a **layered seismic protection architecture** combining floor acceleration sensing, edge decision logic, a mechanical isolation layer, and a real-time **Three.js WebGL Digital Twin**.
 
 ```
+PROPOSED SEISMIC PROTECTION PIPELINE:
+
 EARTHQUAKE GROUND MOTION
         │
         ▼
-[ SEISMIC ACCELEROMETER ARRAY ] ──(100 Hz Real-Time Telemetry)
+[ SEISMIC ACCELEROMETER ARRAY ] ─── 🔵 Proposed Hardware (MEMS IMU)
         │
         ▼
-[ EDGE DECISION ENGINE ] ──(Sub-20ms Threshold Validation & Pump Filtering)
+[ EDGE DECISION ENGINE ] ────────── 🟢 Implemented Software Logic / 🔵 Proposed MCU Firmware
         │
         ▼
-[ ESDS ISOLATION PLATFORM ] ──(D1–D4 Damping Actuation)
+[ SEISMIC ISOLATION PLATFORM ] ──── 🟡 Simulated $85\%$ Attenuation / 🔵 Proposed Physical Isolators
         │
         ▼
-[ STABILIZED PATIENT & DIALYSIS POD ] ──(>85% Motion Attenuation)
+[ PROTECTED PATIENT & CONSOLE ] ─── 🟢 3D WebGL Digital Twin Representation
 ```
 
-The current **Software MVP** provides an interactive, real-time **Three.js/WebGL Digital Twin** and **Earthquake Kinematics Simulator**. It visually and quantitatively demonstrates the comparative performance of an **UNPROTECTED (WITHOUT ESDS)** setup versus a **PROTECTED (WITH ESDS)** capsule during simulated seismic events.
+The current **Software MVP** provides an interactive split-screen demonstration comparing an **UNPROTECTED (WITHOUT ESDS)** setup versus a **PROTECTED (WITH ESDS)** setup under identical simulated earthquake signals.
 
 ---
 
 ## 🎯 Problem Statement
 
-During an earthquake, ground movement generates multi-axis acceleration forces. While modern healthcare facilities are constructed under seismic structural codes, internal medical equipment and patient treatment units remain vulnerable to kinetic displacement.
+During seismic events, ground acceleration creates multi-axis forces that can cause unanchored objects to shift, vibrate, or overturn.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
@@ -42,140 +79,122 @@ During an earthquake, ground movement generates multi-axis acceleration forces. 
 │                                                                                  │
 │   SEISMIC INPUT ──► HOSPITAL FLOOR ──► MACHINE DISPLACEMENT ──► TUBING TENSION   │
 │                                                                                  │
-│                                  RESULT:                                         │
-│          • Dialysis Console Tipping / Sliding                                    │
-│          • Vascular Access Dislodgement Risk                                     │
-│          • Sudden Treatment Disruption & Panic                                   │
+│                               POTENTIAL RISKS:                                   │
+│          • Dialysis Console Sliding / Tipping Risk                               │
+│          • Tubing Stress & Vascular Access Displacement Risk                     │
+│          • Treatment Interruption & Staff Emergency Overload                     │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Problem Breakdown Across Three Clinical Perspectives
+### Problem Context Across Three Perspectives
 
-#### 1. Patient Safety
-Hemodialysis patients are tethered to a blood purification circuit for 3 to 4 hours per session. Blood is pumped outside the body at flow rates of $300–450 \text{ mL/min}$. Any sudden relative displacement between the patient's arm and the hemodialysis console can cause:
-- Severe mechanical tension on blood tubing.
-- Risk of needle dislodgement from the Arteriovenous (AV) Fistula/Graft.
-- Involuntary patient movement or falling from the treatment chair due to floor shaking.
+#### 1. Patient Considerations
+Hemodialysis requires continuous blood circulation outside the body at flow rates of $300–450 \text{ mL/min}$. Differential motion between the patient's arm and the dialysis console may create mechanical tension on blood lines, potentially increasing the risk of tubing displacement or access-site complications.
 
-#### 2. Equipment Integrity
-Hemodialysis consoles are tall, top-heavy units (weighing $80–120 \text{ kg}$) housing fluidic pumps, dialysate heaters, balancing chambers, and sensitive optical/pressure sensors:
-- Unanchored consoles can slide, collide with wall infrastructure, or tip over.
-- Internal fluidic lines and glass dialyzer housings can rupture, causing fluid spills and electrical short circuits.
-- Precision sensors and peristaltic pump rotors can suffer mechanical alignment failure.
+#### 2. Equipment Integrity Considerations
+Hemodialysis consoles are tall, top-heavy units (weighing $80–120 \text{ kg}$) housing fluidic pumps, dialysate heaters, and sensitive sensors. Uncontrolled floor shaking may cause equipment to slide, tilt, or collide with adjacent walls, potentially leading to fluid leaks, sensor misalignment, or mechanical failure.
 
-#### 3. Healthcare Facility Resilience
-During a seismic emergency, nephrology staff and nurses must manage patient panic, monitor structural safety, and initiate emergency disconnect procedures simultaneously. A system that automatically absorbs seismic shock alleviates staff cognitive overload and preserves clinical operational continuity.
+#### 3. Facility Operational Continuity
+During an earthquake, medical staff must handle patient reassurance, structural evaluation, and emergency procedures simultaneously. An automated seismic protection layer is intended to reduce mechanical transmission automatically, mitigating staff cognitive workload during emergency responses.
+
+*Note: ESDS is an engineering concept intended to reduce mechanical transmission; all clinical claims represent theoretical design targets requiring physical validation.* 🔴
 
 ---
 
-## ⚠️ Why This Problem Matters (Risk Analysis)
+## 💡 Proposed Solution Architecture
 
-Unmitigated structural vibration during hemodialysis introduces several operational hazards:
-
-| Clinical / Structural Hazard | Unmitigated Impact (Without ESDS) | ESDS Mitigation Strategy |
-| :--- | :--- | :--- |
-| **Vascular Access Tension** | Relative motion pulls blood tubing, stressing access site. | Pod interior moves as a unified isolated body, keeping relative distance fixed. |
-| **Equipment Displacement** | Machines slide or overturn due to lateral acceleration. | Base isolators absorb $\ge 85\%$ of lateral kinetic energy. |
-| **Treatment Interruption** | Alarms trigger due to fluidic line displacement or sensor vibration. | Signal filtering + structural isolation prevent false trips and machine damage. |
-| **Staff Panic & Overload** | Nurses must manually hold machines or struggle to disconnect lines while shaking. | Automated 5-step safety pipeline secures equipment in sub-second timeframes. |
-
-*Note: All medical references indicate potential operational risks that ESDS is engineered to mitigate; the system is designed as a preventive mechanical and electronic safety layer.*
-
----
-
-## 💡 Proposed Solution & ESDS System Architecture
-
-ESDS is designed as a modular, multi-layered safety solution combining physical isolation hardware with real-time software digital twin monitoring.
+ESDS is conceptualized as a multi-tiered safety system:
 
 ```mermaid
 flowchart TD
-    EQ[Earthquake Ground Motion] --> SENS[ADXL345 Accelerometer Array]
-    SENS --> EDGE[Edge Controller / Signal Processing]
+    EQ[Earthquake Ground Motion] --> SENS[Proposed MEMS Accelerometer Array]
+    SENS --> EDGE[Edge Controller Logic]
     EDGE --> FILTER{Pump Frequency Filter}
-    FILTER -- Routine Pump Vibration --> IGNORE[Suppress False Alarm]
-    FILTER -- Seismic Signal > 0.25g --> ACTUATE[Activate Isolation Dampers D1-D4]
-    ACTUATE --> PLATFORM[ESDS Isolation Platform]
-    PLATFORM --> POD[Protected Dialysis Pod & Patient Safety Zone]
-    EDGE --> DT[Three.js WebGL Digital Twin Control Panel]
+    FILTER -- Routine Pump Noise --> IGNORE[Suppress False Alarm]
+    FILTER -- Low-Freq Seismic Wave --> ACTUATE[Trigger Isolation Control]
+    ACTUATE --> PLATFORM[Proposed Seismic Isolation Platform]
+    PLATFORM --> POD[Protected Patient & Console Environment]
+    EDGE --> DT[Implemented Three.js WebGL Digital Twin]
 ```
 
-### Complete End-to-End Workflow
+### Protection Layers (Implemented vs. Proposed)
 
-1. **Seismic Sensing**: High-precision MEMS accelerometers on the building floor measure tri-axial acceleration $(g_x, g_y, g_z)$ at a $100 \text{ Hz}$ sampling frequency.
-2. **Signal Filtering**: Digital band-pass filters distinguish low-frequency seismic ground waves ($0.5–10 \text{ Hz}$) from high-frequency routine dialyzer pump vibrations ($20–30 \text{ Hz}$).
-3. **Threshold Validation**: If dynamic acceleration exceeds the safety threshold ($0.25\text{g}$), the Edge Decision Engine triggers emergency protocol mode within $38 \text{ ms}$.
-4. **Mechanical Isolation**: Four active/passive damping units ($D1, D2, D3, D4$) engage, allowing the base frame to shift horizontally under floor motion while keeping the upper treatment platform stable.
-5. **Digital Twin Synchronization**: The WebGL Digital Twin mirrors physical motion in real time, displaying telemetry, risk metrics, and comparative motion analytics.
+1. **Seismic Sensing**: 🔵 Proposed tri-axial MEMS accelerometers on building floors measuring acceleration at $100 \text{ Hz}$. (🟡 Currently simulated via computational math functions).
+2. **Signal Filtering**: 🟢 Implemented software filter logic separating low-frequency seismic motion ($0.5–10 \text{ Hz}$) from high-frequency dialyzer pump vibration ($20–30 \text{ Hz}$).
+3. **Threshold Detection**: 🟢 Implemented logic triggering an emergency response state when simulated dynamic acceleration exceeds $0.25\text{g}$.
+4. **Mechanical Isolation**: 🔵 Proposed physical isolators (MR dampers, viscous dampers, or elastomeric mounts). (🟡 Currently modeled in software as an illustrative $85\%$ motion reduction).
+5. **Digital Twin Visualization**: 🟢 Implemented Three.js WebGL control panel rendering live 3D representations, waveforms, and telemetry analytics.
 
 ---
 
-## 🛠️ Current Software MVP — What Has Been Built
+## 🛠️ Current Software MVP — Audit of Repository Features
 
-The repository contains a fully functional, production-compiled **Software MVP** demonstrating the ESDS platform concept:
+An audit of the actual codebase (`src/App.tsx`, `DialysisDigitalTwin.tsx`, `useSimulation.ts`, etc.) reveals the following verifiable implementations:
 
-| Feature / Component | Scope / Implementation Status | Details |
-| :--- | :--- | :--- |
-| **Three.js 3D Digital Twin** | `[IMPLEMENTED]` | Interactive WebGL 3D model featuring protective capsule shell, bed, patient, dialysis machine, IV bags, blood tubing, sensors, and isolator mounts. |
-| **Dual Compare Mode** | `[IMPLEMENTED]` | Side-by-side live WebGL rendering of UNPROTECTED vs. PROTECTED pods animating synchronously. |
-| **Seismic Kinematics Engine** | `[IMPLEMENTED]` | Multi-harmonic deterministic wave generator supporting NORMAL (5%), MODERATE (55%), SEVERE (88%), and PUMP VIBRATION scenarios. |
-| **Smooth Damping & Ramp** | `[IMPLEMENTED]` | Lerp-based smooth start ($0.3\text{s}$) and damped return-to-neutral ($0.5\text{s}$) when resetting. |
-| **Live Vibration Waveform** | `[IMPLEMENTED]` | HTML5 Canvas $100 \text{ Hz}$ real-time oscilloscope displaying dynamic acceleration against threshold lines. |
-| **Sensor Telemetry Panel** | `[IMPLEMENTED]` | Live dashboard displaying acceleration $(g)$, floor motion $(\%)$, pod motion $(\%)$, and isolation efficiency $(\%)$. |
-| **Automated Safety Pipeline** | `[IMPLEMENTED]` | 5-step visual state machine (`MONITOR` $\rightarrow$ `DETECT` $\rightarrow$ `ISOLATE` $\rightarrow$ `PROTECT` $\rightarrow$ `SECURE`). |
-| **False Positive Demo** | `[IMPLEMENTED]` | Demonstration of dialyzer pump frequency filtering to prevent false safety triggers. |
-| **Hardware Isolation Mounts** | `[PROPOSED FULL-SCALE]` | Physical MR dampers, servo isolators, and MEMS hardware specifications documented for production build. |
-| **Closed-Loop Actuator Control** | `[PROPOSED FULL-SCALE]` | Embedded ESP32/STM32 firmware control loops for physical hardware deployment. |
+| Feature / Component | Source Location | Classification | Functional Description |
+| :--- | :--- | :--- | :--- |
+| **Three.js 3D Digital Twin** | `DialysisDigitalTwin.tsx` | 🟢 `[IMPLEMENTED]` | Interactive WebGL 3D rendering of capsule, bed, 3D patient model, console, IV bags, blood tubing, and isolator mounts. |
+| **Split-Screen Compare Mode** | `DialysisDigitalTwin.tsx` | 🟢 `[IMPLEMENTED]` | Dual WebGL viewports rendering UNPROTECTED vs. PROTECTED models animating synchronously. |
+| **Seismic Kinematics Engine** | `DialysisDigitalTwin.tsx` | 🟢 `[IMPLEMENTED]` | Deterministic multi-harmonic wave generator supporting NORMAL, MODERATE (55%), SEVERE (88%), and PUMP VIBRATION modes. |
+| **Smooth Damping & Ramp** | `DialysisDigitalTwin.tsx` | 🟢 `[IMPLEMENTED]` | Fast $0.3\text{s}$ lerp ramp-up and $0.5\text{s}$ damped return-to-neutral upon reset. |
+| **Live Vibration Waveform** | `VibrationChart.tsx` | 🟢 `[IMPLEMENTED]` | HTML5 Canvas $100 \text{ Hz}$ oscilloscope plotting dynamic acceleration against a $0.25\text{g}$ threshold. |
+| **Telemetry Dashboard** | `SensorTelemetry.tsx` | 🟢 `[IMPLEMENTED]` | Displays dynamic acceleration $(g)$, floor motion $(\%)$, pod motion $(\%)$, and isolation efficiency $(\%)$. |
+| **Automated Safety Pipeline** | `SafetyStateMachine.tsx` | 🟢 `[IMPLEMENTED]` | 5-step visual pipeline (`MONITOR` $\rightarrow$ `DETECT` $\rightarrow$ `ISOLATE` $\rightarrow$ `PROTECT` $\rightarrow$ `SECURE`). |
+| **False Positive Demo** | `FalsePositiveDemo.tsx` | 🟢 `[IMPLEMENTED]` | Visual demonstration of filtering dialyzer pump frequency noise to prevent false emergency triggers. |
+| **Synthetic Sensor Telemetry** | `useSimulation.ts` | 🟡 `[SIMULATED]` | Telemetry values generated via TypeScript state functions for MVP demonstration. |
+| **Physical Isolation Dampers** | N/A | 🔵 `[PROPOSED]` | Hardware dampers (MR fluid / elastomeric) proposed for future physical fabrication. |
+| **Physical Controller Board** | N/A | 🔵 `[PROPOSED]` | Embedded ESP32/STM32 controller hardware proposed for physical testing. |
+| **Measured Isolation Efficiency** | N/A | 🔴 `[NOT VALIDATED]` | Physical attenuation percentage requiring experimental shake-table testing. |
 
 ---
 
 ## 🌐 Three.js 3D Digital Twin Architecture
 
-The 3D Digital Twin built in `src/components/DialysisDigitalTwin.tsx` provides an intuitive representation of the physical capsule and isolation mechanism.
+The 3D Digital Twin (`src/components/DialysisDigitalTwin.tsx`) provides a visual software model of the proposed capsule and isolation structure:
 
 ```
-       ┌─────────────────────────────────────────────────────────────┐
-       │               TRANSPARENT GLASS CANOPY SHELL                │
-       │                                                             │
-       │   ┌─────────────────────┐       ┌───────────────────────┐   │
-       │   │  PATIENT & BED      │======═│  DIALYSIS MACHINE     │   │
-       │   │  (Safety Zone)      │ Tubing│  (Pump & Screen)      │   │
-       │   └─────────────────────┘       └───────────────────────┘   │
-       └─────────────────────────────────────────────────────────────┘
-       ===============================================================
-       │  [D1]         [D2]               [D3]         [D4]          │ ◄── Isolation Mounts
-       └─────────────────────────────────────────────────────────────┘
-       ─────────────────────────────────────────────────────────────── ◄── Hospital Floor Grid
+┌─────────────────────────────────────────────────────────────┐
+│               TRANSPARENT GLASS CANOPY SHELL                │
+│                                                             │
+│   ┌─────────────────────┐       ┌───────────────────────┐   │
+│   │  PATIENT & BED      │======═│  DIALYSIS MACHINE     │   │
+│   │  (Safety Zone)      │ Tubing│  (Pump & Screen)      │   │
+│   └─────────────────────┘       └───────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+===============================================================
+│  [D1]         [D2]               [D3]         [D4]          │ ◄── Visual Isolators (Damped Piston Motion)
+└─────────────────────────────────────────────────────────────┘
+─────────────────────────────────────────────────────────────── ◄── Simulated Ground Grid
 ```
 
-### Detailed Breakdown of 3D Scene Components
+### 3D Scene Component Hierarchy 🟢
 
-1. **Outer Capsule Enclosure**: Metallic structural frame with an upper physically-based transparent glass canopy (`MeshPhysicalMaterial`, IOR 1.5, transmission 0.85).
-2. **Treatment Bed & Mattress**: Multi-part articulated bed with backrest elevation, side safety rails, and mattress cushion.
-3. **Anatomical 3D Human Patient**: Procedural 3D humanoid figure lying on the bed with elevated head, torso, arm position, and blanket covering.
-4. **Hemodialysis Console**: Computerized dialysis console featuring an active LCD status screen (rendered via dynamic 2D canvas texture), IV pole, saline/blood bags, filter dialyzer cylinder, and rotating peristaltic pump rotor.
-5. **Extracorporeal Blood Lines**: 3D curved tube geometries (`TubeGeometry` with Catmull-Rom spline pathing) connecting the dialysis machine to the patient's arm.
-6. **Seismic Isolation Platform**: Heavy dual-deck steel base with lower deck anchored to the floor and upper deck resting on isolation mounts.
-7. **Isolator Units (D1–D4)**: Four mechanical isolation mounts featuring base housings, chrome piston shafts, dynamic spring coils (`TubeGeometry`), and status LED indicator rings.
-8. **Virtual ADXL345 Sensor**: Microcontroller sensor chip mounted on the frame with dynamic status indicator LED.
+- **Capsule Frame & Glass Shell**: Cylinder geometry with a PBR physical glass material (`MeshPhysicalMaterial`, transmission $0.85$, opacity $0.35$).
+- **Articulated Bed & Patient**: Multi-part treatment bed housing a procedural 3D anatomical human figure with head, torso, arm, gown, and blanket geometries.
+- **Hemodialysis Console**: Equipment housing featuring an active LCD status display (2D canvas texture), IV pole, saline/blood bags, dialyzer filter cylinder, and rotating peristaltic pump rotor.
+- **Extracorporeal Blood Lines**: 3D curved tube geometries (`TubeGeometry` with Catmull-Rom paths) connecting console to patient arm.
+- **Seismic Base & Isolators ($D1–D4$)**: Dual-deck platform with four isolator units featuring chrome piston shafts, spring coils (`TubeGeometry`), and status LED rings.
+- **Orbit Controls & Camera**: Interactive mouse drag orbiting (radius $14.5$ in single view, $17.5$ in compare view) preventing 3D mesh clipping.
 
 ---
 
 ## 📊 Seismic Simulation & Kinematics Engine
 
-The animation engine (`DialysisDigitalTwin.tsx`) calculates real-time mechanical displacement without relying on erratic random numbers (`Math.random()`).
+The animation loop in `DialysisDigitalTwin.tsx` calculates real-time mesh positions using deterministic wave functions rather than random jitter.
 
-### Seismic Wave Equation
+### Computational Simulation Equations 🟡
 
-Seismic ground acceleration is generated using a deterministic multi-harmonic wave equation:
+#### 1. Multi-Harmonic Wave Equation
+Ground acceleration is simulated using a combination of sine waves:
 
 $$\text{Wave}(t) = 0.45 \sin(18t) + 0.25 \sin(31t) + 0.12 \sin(47t)$$
 
-Where $t$ represents elapsed time in seconds.
+Where $t$ is elapsed time in seconds.
 
-### Kinematics Equations of Motion
+#### 2. Unprotected Model Motion (Left Viewport)
+The unprotected model follows simulated floor motion directly, combined with high-frequency kinetic vibration:
 
-#### 1. Unprotected Left Model (Without ESDS)
-The unprotected model follows floor acceleration directly, experiencing unmitigated ground displacement plus high-frequency structural vibration:
+$$A_{\text{floor}} = \max\left(0.35, \frac{\text{FloorMotion}}{100} \cdot 2.0\right) \cdot R(t)$$
 
 $$X_{\text{unprotected}}(t) = 1.8 \cdot \text{Wave}(t) \cdot A_{\text{floor}} + \left(0.35 \sin(36t) + 0.22 \cos(54t)\right) A_{\text{floor}}$$
 
@@ -183,239 +202,242 @@ $$Y_{\text{unprotected}}(t) = \left(0.20 \sin(42t) + 0.12 \cos(26t)\right) A_{\t
 
 $$\Theta_{\text{unprotected}}(t) = \left(0.10 \sin(28t) + 0.06 \cos(46t)\right) A_{\text{floor}}$$
 
-Where $A_{\text{floor}} = \frac{\text{FloorMotion}}{100} \cdot R(t)$, and $R(t)$ is the smooth lerp ramp factor ($0.0 \rightarrow 1.0$).
+Where $R(t)$ is the lerp ramp factor ($0.0 \rightarrow 1.0$).
 
-#### 2. Protected Right Model (With ESDS)
-The protected model receives the same seismic input, but ESDS attenuates transmitted kinetic energy by $85\%$:
+#### 3. Protected Model Motion (Right Viewport)
+The protected model uses an illustrative $0.15$ motion factor to represent conceptual isolation:
 
-$$X_{\text{protected}}(t) = 0.15 \cdot \text{Wave}(t) \cdot A_{\text{floor}}$$
+$$X_{\text{protected}}(t) = 0.15 \cdot \text{Wave}(t) \cdot A_{\text{floor}}, \quad Y_{\text{protected}}(t) = 0, \quad \Theta_{\text{protected}}(t) = 0$$
 
-$$Y_{\text{protected}}(t) = 0, \quad \Theta_{\text{protected}}(t) = 0$$
-
-#### 3. Isolator Piston Compression
-The four isolator pistons ($D1–D4$) compress dynamically in phase to absorb floor movement:
+#### 4. Isolator Piston Stroke
+Isolator pistons ($D1–D4$) animate in phase with relative displacement:
 
 $$\text{Stroke}_{\text{piston}}(t) = \left(X_{\text{floor}}(t) - X_{\text{protected}}(t)\right) \cdot 0.45$$
+
+*Important Note: These calculations represent simulation parameters used for software visualization and do NOT represent measured physical sensor data.* 🟡
 
 ---
 
 ## ⚖️ Protected vs. Unprotected Comparison
 
-In **Compare Mode**, ESDS renders two independent, live 3D WebGL viewports side-by-side:
+In **Compare Mode**, ESDS renders two live 3D WebGL viewports side-by-side:
 
 ```
 ┌───────────────────────────────────────┬───────────────────────────────────────┐
-│       WITHOUT ESDS (UNPROTECTED)      │         WITH ESDS (PROTECTED)         │
+│     WITHOUT ESDS (UNPROTECTED) 🟡     │       WITH ESDS (PROTECTED) 🟡        │
 │                                       │                                       │
-│   • Pod Motion: HIGH (47%)            │   • Pod Motion: LOW (7%)              │
-│   • Structural Vibration: Extreme     │   • Structural Vibration: Attenuated  │
+│   • Pod Motion: HIGH (e.g. 47%)       │   • Pod Motion: LOW (e.g. 7%)         │
+│   • Simulated Vibration: Unmitigated  │   • Simulated Vibration: Attenuated   │
 │   • Dampers: Disabled (OFF)           │   • Dampers: Active (D1-D4 Engaged)   │
-│   • Status: HIGH MOTION RISK          │   • Status: PATIENT SAFETY ZONE       │
+│   • Visual State: High Motion Risk    │   • Visual State: Stabilized Pod      │
 └───────────────────────────────────────┴───────────────────────────────────────┘
 ```
 
-### Transmissibility Formulation
+### Transmissibility Concept 🔵 🔴
 
-Transmissibility ($T$) measures the ratio of force transmitted to the pod relative to floor input:
+In mechanical engineering, transmissibility ($T$) is defined as:
 
-$$T = \frac{X_{\text{protected}}}{X_{\text{floor}}} \approx 0.15 \quad (\implies 85\% \text{ Isolation Efficiency})$$
+$$T = \frac{\text{Transmitted Acceleration}}{\text{Input Acceleration}} = \sqrt{\frac{1 + (2\zeta r)^2}{(1 - r^2)^2 + (2\zeta r)^2}}$$
+
+Where $r = \frac{\omega}{\omega_n}$ is the frequency ratio and $\zeta$ is the damping ratio.  
+*Target Design Goal*: Achieve $T < 0.20$ ($>80\%$ attenuation) for frequencies above $3 \text{ Hz}$.  
+*Current MVP Implementation*: Models an illustrative $0.15$ multiplier for visual software comparison. 🟡
 
 ---
 
-## 🔬 Proposed Full-Scale Hardware Architecture
+## 🔬 Proposed Full-Scale Hardware Architecture 🔵
+
+> *Notice: The hardware components described below represent candidate technologies for future engineering prototyping and are NOT physically built into the current software repository.*
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                       FULL-SCALE PHYSICAL HARDWARE STACK                        │
+│                    PROPOSED PHYSICAL HARDWARE CANDIDATES                        │
 │                                                                                 │
-│   [ADXL345 / MEMS IMU] ──► [ESP32 / STM32 EDGE MCU] ──► [MR DAMPER ACTUATORS]   │
-│            ▲                           │                          ▲             │
-│            │                           ▼                          │             │
-│   Floor Acceleration          CAN Bus / Ethernet         Piston Stroke      │
+│   [MEMS / IMU SENSORS] ──► [ESP32 / STM32 MCU] ──► [ISOLATION ACTUATORS]       │
+│      (ADXL345 / MPU6050)      (Edge Controller)    (MR Dampers / Servos / Rubber)│
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### A. Seismic Sensing Layer
-- **Primary Floor Sensor**: ADXL345 or MPU6050 3-axis MEMS accelerometer ($\pm 2\text{g} / \pm 8\text{g} / \pm 16\text{g}$ range, $100\text{ Hz}$ output data rate via $I^2C$/SPI).
-- **Secondary Platform Sensor**: Differential accelerometer mounted on the isolated upper platform to measure residual acceleration.
+### Candidate Technology Evaluation Matrix 🔵 🔴
 
-### B. Microcontroller / Edge Controller Layer
-- **Edge Unit**: ESP32-WROOM-32 or STM32F4 Cortex-M4 microcontroller running a real-time deterministic control loop.
-- **Threshold Processing**: Sub-20ms windowed RMS acceleration calculation:
-  $$a_{\text{RMS}} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (a_{x,i}^2 + a_{y,i}^2 + a_{z,i}^2 - g^2)}$$
-
-### C. Communication Protocol
-- **Fieldbus**: CAN Bus 2.0B / RS-485 for low-latency, noise-immune interconnect between sensors and damper drivers.
-- **Network Interface**: Ethernet / Wi-Fi streaming telemetry via MQTT to central hospital monitoring consoles.
-
-### D. Actuator & Mechanical Isolation Layer
-- **Magnetorheological (MR) Dampers**: Fluid isolators whose viscosity alters within milliseconds under magnetic fields.
-- **Linear Servo Drives**: Active ball-screw actuators providing counter-phase horizontal stroke displacement.
-- **Fail-Safe Mechanical Lockouts**: Solenoid-actuated pins that default to locked position during power loss.
+| Hardware Layer | Candidate Technologies | Primary Function | Candidate Rationale | Limitations / Validation Required 🔴 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Seismic Sensing** | ADXL345, MPU6050, Industrial MEMS IMU | Tri-axial floor acceleration measurement | Low cost, high sampling frequency ($100+\text{ Hz}$), $I^2C$/SPI interface. | Requires calibration against calibrated shake-table reference sensors. |
+| **Edge Controller** | ESP32-WROOM, STM32F4, Industrial PLC | Sensor processing, thresholding, actuator signal output | Real-time processing, low power, integrated communications. | Requires deterministic RTOS task scheduling verification under sub-20ms targets. |
+| **Fieldbus Comms** | CAN Bus 2.0B, RS-485, Industrial Ethernet | Low-latency interconnect between MCU and damper drivers | High noise immunity in clinical environments. | Cable routing and electromagnetic compatibility (EMC) testing required. |
+| **Isolation Actuators** | Magnetorheological (MR) Dampers, Servo Drives, Viscous Dampers | Kinetic energy absorption and counter-phase displacement | Variable damping viscosity under magnetic fields (MR dampers). | High cost, power requirements, and fluid seal durability testing required. |
+| **Passive Isolators** | High-damping Rubber Bearings, Steel Springs | Base structural isolation | Constant passive isolation without external power. | Potential resonance near natural frequency ($\omega_n$) without active damping. |
 
 ---
 
-## 🏗️ Mechanical Design & Engineering Principles
+## 🏗️ Mechanical System Design Concept 🔵
 
 ```
   ┌─────────────────────────────────────────────────────────────┐
-  │                 ISOLATED UPPER PLATFORM                     │  ◄── Supports Pod, Bed & Console
+  │                 ISOLATED UPPER PLATFORM                     │  ◄── Candidate Steel Frame
   └─────────────────────────────────────────────────────────────┘
      ▲              ▲                         ▲              ▲
      │              │                         │              │
-  [D1 Mount]    [D2 Mount]                 [D3 Mount]    [D4 Mount]  ◄── Damping Elements
+  [D1 Mount]    [D2 Mount]                 [D3 Mount]    [D4 Mount]  ◄── Candidate Isolator Units
      │              │                         │              │
   ┌─────────────────────────────────────────────────────────────┐
-  │                   HEAVY STEEL BASE FRAME                    │  ◄── Anchored to Building Floor
+  │                   HEAVY BASE FRAME                          │  ◄── Anchored Base
   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Mechanical Design Guidelines
-1. **Low Natural Frequency ($\omega_n$)**: System natural frequency tuned below $1.2 \text{ Hz}$ so that higher-frequency seismic waves ($3–8 \text{ Hz}$) fall into the isolation region ($r = \frac{\omega}{\omega_n} > \sqrt{2}$).
-2. **Overturning Resistance**: Wide base footprint ($11.5 \text{ ft} \times 5.5 \text{ ft}$) lowers the center of gravity, preventing console tipping under lateral loads up to $1.2\text{g}$.
-3. **Tubing Relief Loop**: Flexible umbilical conduit bridges the isolated platform and wall supply lines (water/drainage), accommodating up to $\pm 150 \text{ mm}$ of lateral displacement without strain.
+### Engineering Design Targets (Proposed) 🔵 🔴
+- **Tuning Natural Frequency ($\omega_n$)**: Target $< 1.5 \text{ Hz}$ to isolate higher-frequency ground shaking ($3–10 \text{ Hz}$). 🔴
+- **Overturning Stability**: Wide base footprint ($11.5 \text{ ft} \times 5.5 \text{ ft}$) designed to lower center of gravity and resist overturning moments. 🔴
+- **Tubing Conduit Relief**: Flexible conduit bridge accommodating up to $\pm 150 \text{ mm}$ of lateral displacement to prevent strain on wall water/drain lines. 🔴
+- **Fail-Safe Mechanical Stops**: Solenoid-actuated pins defaulting to locked position upon power loss. 🔴
 
 ---
 
-## 🎛️ Control System & Detection Algorithm
+## 🎛️ Proposed Closed-Loop Control System 🔵
 
 ```
-                 ┌──────────────────────────────────────────────┐
-                 │          CLOSED-LOOP CONTROL FLOW            │
-                 └──────────────────────────────────────────────┘
-                                         │
-                                         ▼
+                                PROPOSED CLOSED-LOOP CONTROL FLOW:
+
 ┌──────────────────┐           ┌──────────────────┐           ┌──────────────────┐
 │  MEMS SENSOR     │           │  BAND-PASS FILTER│           │ THRESHOLD CHECK  │
-│  Raw Data (100Hz)│──────────►│  (0.5 - 10 Hz)   │──────────►│  a > 0.25g ?     │
+│  Floor Accel.    │──────────►│  (0.5 - 10 Hz)   │──────────►│  a > 0.25g ?     │
 └──────────────────┘           └──────────────────┘           └─────────┬────────┘
                                                                         │ YES
                                                                         ▼
 ┌──────────────────┐           ┌──────────────────┐           ┌──────────────────┐
-│ STABILIZED REST  │           │ ACTIVE DAMPING   │           │ ENGAGE DAMPER    │
-│ Monitor Mode     │◄──────────│ Closed-Loop Ctrl │◄──────────│ SOLENOIDS D1-D4  │
+│ STABILIZED REST  │           │ CLOSED-LOOP      │           │ ENGAGE DAMPER    │
+│ Monitor Mode     │◄──────────│ FEEDBACK CONTROL │◄──────────│ ACTUATORS D1-D4  │
 └──────────────────┘           └──────────────────┘           └──────────────────┘
 ```
 
-### False Positive Prevention Algorithm
-Hemodialysis blood pumps operate at rotor frequencies of $20–30 \text{ Hz}$, generating localized micro-vibrations. ESDS uses a digital Butterworth filter to ignore high-frequency noise while triggering exclusively on low-frequency ground motion characteristic of seismic events.
+### Detection Logic & Filter Strategy 🟢 🔵
+Hemodialysis peristaltic blood pumps generate localized micro-vibrations at $20–30 \text{ Hz}$. ESDS implements band-pass filtering to isolate low-frequency ground motion ($0.5–10 \text{ Hz}$), preventing false alarms triggered by routine machine operation. 🟢
 
 ---
 
-## 🤖 Future Scope — AI & Machine Learning Integration
+## 🤖 AI & Machine Learning — Future Scope 🔵
 
-While the current MVP uses deterministic threshold algorithms, future physical iterations can integrate edge AI capabilities:
+While the current MVP uses deterministic threshold logic, future physical iterations may evaluate edge AI capabilities:
 
-- **Seismic P-Wave Early Warning**: Convolutional Neural Networks (CNNs) processing real-time P-wave arrivals to predict S-wave magnitude seconds before major shaking reaches the facility.
-- **Adaptive Damping Optimization**: Reinforcement Learning models (e.g., Deep Q-Networks) dynamically tuning MR damper current based on patient weight and real-time floor acceleration profiles.
-- **Predictive Mechanical Health**: Anomaly detection algorithms analyzing isolator bearing degradation over time.
+- **P-Wave Early Warning Classification**: Convolutional Neural Networks (CNNs) analyzing initial seismic P-waves to estimate S-wave arrival magnitude. 🔵
+- **Adaptive Damping Optimization**: Reinforcement learning algorithms dynamically adjusting damper currents based on patient weight and floor vibration profiles. 🔵
+- **Predictive Maintenance**: Anomaly detection models analyzing isolator wear over long operational lifespans. 🔵
+
+*Current MVP Status*: AI capabilities are strictly future research scope; no machine learning models are deployed in the current codebase. 🟢
 
 ---
 
-## 💻 Software Architecture & Stack
-
-The ESDS Software MVP is built as a modern, modular React application.
+## 💻 Software Architecture & Tech Stack
 
 ```mermaid
 flowchart TD
-    App[src/App.tsx - Main Dashboard]
-    Hook[src/hooks/useSimulation.ts - Telemetry Engine]
+    App[src/App.tsx - Main Dashboard Entry]
+    Hook[src/hooks/useSimulation.ts - Telemetry Hook]
     
     App --> Header[Header.tsx]
-    App --> Twin[DialysisDigitalTwin.tsx - Three.js Engine]
-    App --> Sim[EarthquakeSimulator.tsx - Controls]
+    App --> Twin[DialysisDigitalTwin.tsx - Three.js WebGL Engine]
+    App --> Sim[EarthquakeSimulator.tsx - Controls & Presets]
     App --> Telem[SensorTelemetry.tsx - Metric Cards]
     App --> Chart[VibrationChart.tsx - 100Hz Waveform]
     App --> State[SafetyStateMachine.tsx - Pipeline Bar]
     App --> Accordion[Technical Accordion Panels]
 
-    Hook -->|Telemetry & State Data| App
-    Sim -->|Trigger Simulation Events| Hook
+    Hook -->|Simulated Telemetry State| App
+    Sim -->|Trigger Simulation Commands| Hook
 ```
 
-### Tech Stack Specifications
+### Tech Stack Component Matrix 🟢
 
 | Layer | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **UI Framework** | React | `^18.3.1` | Component-based dashboard architecture. |
-| **Language** | TypeScript | `^5.7.3` | Type-safe state and telemetry interface declarations. |
-| **3D Engine** | Three.js | `^0.185.1` | WebGL hardware-accelerated 3D Digital Twin rendering. |
-| **Styling** | Tailwind CSS | `^3.4.17` | Responsive light medical theme styling. |
-| **Icons** | Lucide React | `^0.475.0` | Vector icon assets. |
-| **Build Tool** | Vite | `^6.1.0` | Fast development server & production bundler. |
+| **Framework** | React | `^18.3.1` | Component-based dashboard architecture. |
+| **Language** | TypeScript | `^5.7.3` | Type-safe telemetry interfaces and state definitions. |
+| **3D Rendering** | Three.js | `^0.185.1` | WebGL hardware-accelerated 3D Digital Twin rendering. |
+| **Styling** | Tailwind CSS | `^3.4.17` | Responsive light medical UI styling. |
+| **Icons** | Lucide React | `^0.475.0` | Vector dashboard UI icons. |
+| **Build Tool** | Vite | `^6.1.0` | Fast development server & production compilation. |
 
 ---
 
-## 🔐 Safety Mechanisms & Emergency Protocols
+## 🔐 Proposed Safety Architecture & Risk Mitigation 🔵 🔴
 
-ESDS follows a strict **Fail-Safe** operational philosophy:
-
-1. **Power-Loss Default**: If electrical power fails during an earthquake, magnetic dampers default to passive mechanical damping mode via internal permanent magnets.
-2. **Manual Override**: Medical staff can manually lock or release the isolation platform using a mechanical brake lever.
-3. **Sub-20ms Response Latency**: Sensor-to-actuator latency is maintained below $20 \text{ ms}$, ensuring damping engages before destructive S-waves peak.
-
----
-
-## 🗺️ Implementation Roadmap
-
-```
-┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│    PHASE 1      │      │    PHASE 2      │      │    PHASE 3      │      │    PHASE 4      │
-│  Software MVP   │ ───► │ Lab Scale Rig   │ ───► │ Clinical Pilot  │ ───► │ Commercial Rollout
-│ Digital Twin    │      │ Shake Table Test│      │ Hospital Trial  │      │ Mass Deployment │
-└─────────────────┘      └─────────────────┘      └─────────────────┘      └─────────────────┘
-```
-
-- **Phase 1 (Completed)**: WebGL 3D Digital Twin, seismic simulation engine, real-time comparison analytics.
-- **Phase 2 (Next Step)**: 1:4 scale physical model on a 2-axis shake table with ESP32 edge MCU and MEMS accelerometers.
-- **Phase 3 (Pilot)**: Full-scale physical platform prototype tested with dummy weights under simulated IS 1893 seismic profiles.
-- **Phase 4 (Deployment)**: Hospital clinical trials and certification under medical device safety standards.
-
----
-
-## 📊 Cost Estimation & Economic Viability
-
-### Estimated Unit Production Cost (Full-Scale Hardware Unit)
-
-| Component | Description | Est. Cost (INR) | Est. Cost (USD) |
+| Risk Scenario | Potential Impact | Proposed Mitigation Strategy 🔵 | Validation Needed 🔴 |
 | :--- | :--- | :--- | :--- |
-| **Structural Frame** | Heavy-gauge steel base & upper deck plate | ₹35,000 | $420 |
-| **Isolator Units (x4)** | Heavy-duty elastomeric / MR dampers | ₹48,000 | $580 |
-| **Sensing Electronics** | Dual MEMS accelerometers + signal conditioning | ₹6,500 | $80 |
-| **Edge Controller** | Industrial ESP32 / STM32 controller board | ₹4,500 | $55 |
-| **Power System** | Battery backup (UPS) & power management | ₹12,000 | $145 |
-| **Assembly & Testing** | Calibration & mechanical assembly | ₹15,000 | $180 |
-| **TOTAL PER UNIT** | **Complete Single-Pod ESDS Platform** | **₹1,21,000** | **~$1,460** |
-
-*Economic Viability*: A single hemodialysis console costs ₹8,00,000 to ₹15,00,000 ($10,000–$18,000). At ~10–15% of machine cost, ESDS offers an economically viable insurance layer protecting both equipment investment and patient safety.
+| **Power Failure** | Active actuators lose signal. | Dampers default to passive elastomeric isolation mode via mechanical lockouts. | Power drop testing on physical prototype. |
+| **Sensor Malfunction** | Single sensor fails or drifts. | Triple-modular redundant (TMR) sensor voting algorithm. | Fault-injection simulation and physical testing. |
+| **Excessive Displacement** | Floor motion exceeds stroke limit. | Elastomeric bumper stops prevent hard metal-to-metal impact. | High-amplitude shake table stroke testing. |
+| **Communication Delay** | Fieldbus latency causes late response. | Hardware interrupt triggers bypassing network protocol. | Real-time latency bench testing ($< 20\text{ ms}$ target). |
 
 ---
 
-## 🌍 Social, Healthcare & Economic Impact
+## 🧪 Comprehensive Validation Strategy & Roadmap
 
-- **Healthcare Resilience**: Ensures dialysis centers in earthquake-prone zones (e.g., Himalayan belt, Zone IV/V regions) maintain emergency operational capability.
-- **Patient Confidence**: Reduces fear and anxiety for chronic dialysis patients undergoing long treatment sessions.
-- **Asset Protection**: Prevents multi-lakh financial losses caused by damaged medical consoles and hospital infrastructure downtime.
+Physical validation of ESDS requires a multi-stage engineering roadmap:
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│     STAGE 1      │     │     STAGE 2      │     │     STAGE 3      │     │     STAGE 4      │
+│   Software MVP   │ ──► │ Bench Scale Rig  │ ──► │ Full Scale Platform │ ─► │ Non-Clinical Pilot│
+│ WebGL Twin 🟢    │     │ Shake Table 🔵   │     │ Simulated Loads 🔵│     │ Hospital Test 🔴 │
+└──────────────────┘     └──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+### Detailed Development Stages
+
+1. **Stage 1 — Software MVP (Current)** 🟢: WebGL 3D Digital Twin, synthetic telemetry loop, UI comparison viewports.
+2. **Stage 2 — Bench Scale Mechanical Prototype** 🔵: 1:4 scale physical rig on a 2-axis shake table with ESP32 MCU and MEMS accelerometers.
+3. **Stage 3 — Controlled Shake-Table Testing** 🔵: Full-scale physical platform tested under simulated seismic wave records (e.g., El Centro 1940, Bhuj 2001).
+4. **Stage 4 — Engineering & Structural Validation** 🔴: Verification of transmissibility ($T < 0.20$), natural frequency tuning, and overturning moment resistance.
+5. **Stage 5 — Electrical & Biomedical Compliance Evaluation** 🔴: Evaluation against **IEC 60601-1** (Medical electrical equipment safety) and **IS 1893** (Seismic design criteria).
+6. **Stage 6 — Non-Clinical Hospital Demonstration** 🔴: Operational pilot using dummy mass loads in a hospital environment.
 
 ---
 
-## ⚡ Validation & Testing Strategy
+## 💰 Indicative Prototype Cost Estimation
 
-Future physical prototypes will undergo rigorous validation against established international standards:
+> *Notice: Costs represent preliminary engineering estimates for physical prototype fabrication and must be confirmed through component procurement.* 🔵 🔴
 
-1. **Shake Table Testing**: Testing the platform under simulated El Centro (1940) and Bhuj (2001) seismic wave records on a 6-DOF shake table.
-2. **Seismic Compliance**: Alignment with **IS 1893** (Criteria for Earthquake Resistant Design of Structures).
-3. **Medical Safety Compliance**: Alignment with **IEC 60601-1** (General requirements for basic safety and essential performance of medical electrical equipment).
+### Estimated Prototype Fabrication Budget (Single-Pod Platform) 🔵
+
+| Item / Subsystem | Description | Estimated Range (INR) | Estimated Range (USD) |
+| :--- | :--- | :--- | :--- |
+| **Structural Frame** | Base plate & upper deck structural steel | ₹25,000 – ₹40,000 | $300 – $480 |
+| **Mechanical Isolators** | Elastomeric / viscous isolator mounts (x4) | ₹30,000 – ₹60,000 | $360 – $720 |
+| **Sensing Package** | Dual MEMS accelerometers + signal conditioning | ₹4,000 – ₹8,000 | $50 – $100 |
+| **Edge Controller** | ESP32 / STM32 industrial breakout board | ₹3,000 – ₹6,000 | $35 – $75 |
+| **Power Management** | Battery backup (UPS) & power supplies | ₹8,000 – ₹15,000 | $100 – $180 |
+| **Fabrication & Assembly** | Machining, welding, and bench testing | ₹15,000 – ₹25,000 | $180 – $300 |
+| **ESTIMATED TOTAL** | **Single Prototype Fabrication Unit** | **₹85,000 – ₹1,54,000** | **~$1,025 – $1,855** |
 
 ---
 
-## 💻 Local Setup & Development Instructions
+## 🏆 Innovation & SIH Value Proposition
+
+### Why ESDS Matters for Smart India Hackathon
+
+1. **Integrated Safety Concept**: Integrates sensing, mechanical isolation, and real-time WebGL digital twin software into a unified healthcare safety concept.
+2. **Focus on High-Vulnerability Treatment**: Addresses hemodialysis specifically, where patient tethering creates unique mechanical risks during seismic events.
+3. **Interactive Software Demonstration**: Provides a transparent WebGL simulator allowing evaluators to compare UNPROTECTED vs. PROTECTED behavior under identical inputs.
+4. **Feasible Engineering Roadmap**: Outlines a clear path from software MVP to bench-scale prototype and compliance testing.
+
+---
+
+## ⚠️ Limitations & Technical Constraints 🔴
+
+1. **Software-Only MVP**: The repository contains no physical hardware, physical sensors, or real-world shake table test data. 🟢
+2. **Simulated Telemetry**: All motion percentages, $g$-force readings, and waveforms are generated computationally for concept demonstration. 🟡
+3. **No Medical Device Certification**: ESDS is not approved by CDSCO, FDA, or CE mark regulatory bodies and cannot be used for clinical decision-making. 🔴
+4. **Physical Engineering Required**: Load-bearing capacity, isolator damping coefficients, and structural stability require mechanical design calculations and physical testing. 🔵 🔴
+
+---
+
+## 💻 Local Setup & Development Instructions 🟢
 
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **npm**: v9.0.0 or higher
 
-### Installation
+### Step-by-Step Installation
 
 1. **Clone the repository**:
    ```bash
@@ -428,24 +450,25 @@ Future physical prototypes will undergo rigorous validation against established 
    npm install
    ```
 
-3. **Start development server**:
+3. **Launch local development server**:
    ```bash
    npm run dev
    ```
+   Open your browser at `http://localhost:5173`.
 
-4. **Build for production**:
+4. **Compile production build**:
    ```bash
    npm run build
    ```
 
-5. **Preview production build**:
+5. **Preview production build locally**:
    ```bash
    npm run preview
    ```
 
 ---
 
-## 📜 License & Credits
+## 📜 Official Project Disclaimer
 
-Developed for the **Smart India Hackathon (SIH)**.  
-*ESDS Protected Pod MVP v1.0 — Conceptual Healthcare Safety Software Digital Twin.*
+> **ESDS Protected Pod MVP v1.0 — Conceptual Healthcare Safety Software.**  
+> *The ESDS project is a software demonstration developed for the Smart India Hackathon (SIH). All motion metrics, waveforms, and isolation behaviors rendered in the digital twin represent software simulation parameters and do not constitute physical test results or medical device validation. ESDS is not a certified medical device.*
